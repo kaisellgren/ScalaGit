@@ -7,7 +7,20 @@ class Repository(var path: String) {
   var database: ObjectDatabase = _
   var refs: ReferenceCollection = _
   var branches: List[Branch] = _
-  def head: Commit = database.findObjectById(refs.head.targetIdentifier).asInstanceOf[Commit]
+
+  def head: Branch = {
+    branches.find((b) => b.tipId == refs.head.targetIdentifier) match {
+      case a: Some[Branch] => a.x
+      case _ => {
+        val b = new DetachedHead()
+        b.repository = this
+        b.name = "(no branch)"
+        b.canonicalName = b.name
+        b.tipId = refs.head.targetIdentifier
+        b
+      }
+    }
+  }
 }
 
 object Repository {
