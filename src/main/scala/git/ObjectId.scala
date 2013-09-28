@@ -18,7 +18,7 @@ object ObjectId {
     o
   }
 
-  def fromBytes(bytes: List[Byte]): ObjectId = {
+  def fromBytes(bytes: Iterable[Byte]): ObjectId = {
     val o = new ObjectId
     o.sha = bytes.map("%02x".format(_)).mkString
     o
