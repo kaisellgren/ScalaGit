@@ -11,7 +11,7 @@ class Tag extends Object {
   var message: String = _
   var tagId: ObjectId = _
   var tagName: String = _
-  var tagType: String = _
+  var tagType: TagType = _
 }
 
 object Tag {
@@ -39,7 +39,7 @@ object Tag {
     // The tag type starts with "type ", also skip
     data = data.take(5)
     try {
-      o.tagType = TagType.withName(new String(data.takeWhile(_ != '\n').map(_.toByte)).trim).toString
+      o.tagType = TagType.withName(new String(data.takeWhile(_ != '\n').map(_.toByte)).trim)
     }
     catch {
       //tag type not found
