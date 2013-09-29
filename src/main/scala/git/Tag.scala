@@ -38,13 +38,19 @@ object Tag {
 
     // The tag type starts with "type ", also skip
     data = data.take(5)
-    //o.tagType = TagType(new String(data.takeWhile(_ != '>')).trim)
+    try {
+      o.tagType = TagType.withName(new String(data.takeWhile(_ != '\n').map(_.toByte)).trim)
+    }
+    catch {
+      //tag type not found
+      case e: Exception => {}
+    }
 
     data = data.drop(40 + 1) // One LF.
 
     // The tag type starts with "tag ", also skip
     data = data.take(4)
-    o.tagName = new String(data.takeWhile(_ != '>').map(_.toByte)).trim
+    o.tagName = new String(data.takeWhile(_ != '\n').map(_.toByte)).trim
 
     data = data.drop(40 + 1) // One LF.
 
