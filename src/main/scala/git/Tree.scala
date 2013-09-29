@@ -7,7 +7,7 @@ class Tree extends Object {
 }
 
 object Tree {
-  def fromObjectFile(bytes: Array[Byte]): Tree = {
+  def fromObjectFile(bytes: Array[Short]): Tree = {
     val o = new Tree
 
     var data = bytes.drop(0)
@@ -18,12 +18,12 @@ object Tree {
       val entry = new TreeEntry
 
       val modeBytes = data.takeWhile(_ != 32)
-      entry.mode = new String(modeBytes).toInt
+      entry.mode = new String(modeBytes.map(_.toByte)).toInt
 
       data = data.drop(modeBytes.length + 1)
 
       val nameBytes = data.takeWhile(_ != 0)
-      entry.name = new String(nameBytes)
+      entry.name = new String(nameBytes.map(_.toByte))
 
       data = data.drop(nameBytes.length + 1)
 

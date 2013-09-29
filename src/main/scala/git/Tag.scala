@@ -15,7 +15,7 @@ class Tag extends Object {
 }
 
 object Tag {
-  def fromObjectFile(bytes: Array[Byte]): Tag = {
+  def fromObjectFile(bytes: Array[Short]): Tag = {
     /*
     Example structure:
     "object" <SP> <HEX_OBJ_ID> <LF>

@@ -1,18 +1,11 @@
 package git.util
 
-import java.io.{File, FileInputStream}
+import java.io.{BufferedInputStream, File, FileInputStream}
 
 object FileUtil {
-  def readContents(file: File): Array[Byte] = {
-    // TODO: Let's have a buffer here...
-    val in = new FileInputStream(file)
-    val bytes = new Array[Byte](file.length.toInt)
-
-    try {
-      in.read(bytes)
-    } finally {
-      in.close()
-    }
+  def readContents(file: File): Array[Short] = {
+    val bis = new BufferedInputStream(new FileInputStream(file))
+    val bytes = Stream.continually(bis.read).takeWhile(-1 !=).map(_.toShort).toArray
 
     bytes
   }

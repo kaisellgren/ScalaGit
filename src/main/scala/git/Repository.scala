@@ -1,12 +1,15 @@
 package git
 
 import scala.collection.mutable.ListBuffer
+import java.io.File
+import git.util.FileUtil
 
 class Repository(var path: String) {
   var commits: CommitLog = _
   var database: ObjectDatabase = _
   var refs: ReferenceCollection = _
   var branches: List[Branch] = _
+  var packIndexes: List[PackIndex] = _
 
   def head: Branch = {
     branches.find((b) => b.tipId == refs.head.targetIdentifier) match {
@@ -34,8 +37,22 @@ object Repository {
     repo.refs.load()
 
     initializeBranches(repo)
+    initializePackIndexes(repo)
 
     repo
+  }
+
+  private def initializePackIndexes(repo: Repository) {
+    val buffer = new ListBuffer[PackIndex]
+
+    new File(repo.path + "/objects/pack").listFiles.filter(_.getName.endsWith(".idx")).foreach((file: File) => {
+      val index = PackIndex.fromPackIndexFile(FileUtil.readContents(file))
+      val packName = file.getName.replace(".idx", ".pack")
+      index.packFile = new File(repo.path + s"/objects/pack/$packName")
+      buffer += index
+    })
+
+    repo.packIndexes = buffer.toList
   }
 
   private def initializeBranches(repo: Repository) = {

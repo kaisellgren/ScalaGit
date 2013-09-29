@@ -33,7 +33,7 @@ class Commit extends Object {
 }
 
 object Commit {
-  def fromObjectFile(bytes: Array[Byte]): Commit = {
+  def fromObjectFile(bytes: Array[Short]): Commit = {
     /*
       Example structure:
 
@@ -57,17 +57,17 @@ object Commit {
     var data = bytes.drop(5)
 
     // Followed by tree hash.
-    o.treeId = ObjectId.fromHash(new String(data.take(40)))
+    o.treeId = ObjectId.fromHash(new String(data.take(40).map(_.toByte)))
 
     data = data.drop(40 + 1) // One LF.
 
     // What follows is 0-n number of parent references.
     def parseParentIds() {
       // Stop if the data does not begin with "parent".
-      if (new String(data.takeWhile(_ != 32)) == "parent") {
+      if (new String(data.takeWhile(_ != 32).map(_.toByte)) == "parent") {
         data = data.drop(7) // Skip "parent ".
 
-        o.parentIds ::= ObjectId.fromHash(new String(data.take(40)))
+        o.parentIds ::= ObjectId.fromHash(new String(data.take(40).map(_.toByte)))
 
         data = data.drop(40 + 1) // One LF.
 
@@ -81,26 +81,26 @@ object Commit {
     def parseAuthorFields(): Tuple3[String, String, Date] = {
       // Name.
       val nameBytes = data.takeWhile(_ != '<')
-      val name = new String(nameBytes).trim
+      val name = new String(nameBytes.map(_.toByte)).trim
 
       data = data.drop(nameBytes.length + 1)
 
       // Email.
       val emailBytes = data.takeWhile(_ != '>')
-      val email = new String(emailBytes).trim
+      val email = new String(emailBytes.map(_.toByte)).trim
 
       data = data.drop(emailBytes.length + 2) // One '>' and one space.
 
       // Timestamp.
       val timestampBytes = data.takeWhile(_ != 32)
 
-      val timestamp = new String(timestampBytes).trim.toInt
+      val timestamp = new String(timestampBytes.map(_.toByte)).trim.toInt
 
       data = data.drop(timestampBytes.length + 1)
 
       // TZ offset.
       val tzBytes = data.takeWhile(_ != '\n')
-      val timeZoneOffset = new String(tzBytes)
+      val timeZoneOffset = new String(tzBytes.map(_.toByte))
 
       data = data.drop(tzBytes.length + 1)
 
@@ -128,7 +128,7 @@ object Commit {
     o.commitDate = committerData._3
 
     // Finally the commit message.
-    o.message = new String(data).trim
+    o.message = new String(data.map(_.toByte)).trim
 
     o
   }

@@ -10,15 +10,15 @@ class ObjectHeader {
 }
 
 object ObjectHeader {
-  def fromObjectFile(bytes: Array[Byte]): ObjectHeader = {
+  def fromObjectFile(bytes: Array[Short]): ObjectHeader = {
     val o = new ObjectHeader
 
     // Figure out the object type. Read until we hit a space.
     val typeData = bytes.takeWhile(_ != 32)
-    o.`type` = ObjectType.withName(new String(typeData))
+    o.`type` = ObjectType.withName(new String(typeData.map(_.toByte)))
 
     val lengthData = bytes.drop(typeData.length + 1).takeWhile(_ != 0)
-    o.length = new String(lengthData).toInt
+    o.length = new String(lengthData.map(_.toByte)).toInt
 
     o
   }

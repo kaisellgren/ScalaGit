@@ -11,7 +11,8 @@ class ObjectDatabase(repository: Repository) {
   def findObjectById(id: ObjectId): Object = {
     // Try to look into the object files first.
     val file = new File(repository.path + s"/objects/${id.sha.take(2)}/${id.sha.substring(2)}")
-    if (file.exists()) {
+
+    if (file.exists) {
       // Let's create the object from the object file.
 
       // Read and decompress the data.
