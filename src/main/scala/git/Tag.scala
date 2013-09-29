@@ -1,8 +1,8 @@
 package git
 
-import scala.collection.mutable.ListBuffer
 import java.util.Date
 import git.TagType.TagType
+import git.util.Parser._
 
 class Tag extends Object {
   var taggerName: String = _
@@ -29,6 +29,35 @@ object Tag {
 		<DATA>
      */
     val o = new Tag
+    // The object file starts with "object ", let's skip that.
+    var data = bytes.drop(7)
+    // Followed by tag hash.
+    o.tagId = ObjectId.fromHash(new String(data.take(40).map(_.toByte)))
+
+    data = data.drop(40 + 1) // One LF.
+
+    // The tag type starts with "type ", also skip
+    data = data.take(5)
+    //o.tagType = TagType(new String(data.takeWhile(_ != '>')).trim)
+
+    data = data.drop(40 + 1) // One LF.
+
+    // The tag type starts with "tag ", also skip
+    data = data.take(4)
+    o.tagName = new String(data.takeWhile(_ != '>').map(_.toByte)).trim
+
+    data = data.drop(40 + 1) // One LF.
+
+    data = data.drop(7) // Skip the "tagger " data.
+
+    val taggerData = parseUserFields(data)
+    o.taggerName = taggerData._1
+    o.taggerEmail = taggerData._2
+    o.tagDate = taggerData._3
+    data = taggerData._4
+
+    // Finally the tag message, if it exists.
+    o.message = new String(data.map(_.toByte)).trim
     o
   }
 }
