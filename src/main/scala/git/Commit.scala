@@ -1,6 +1,7 @@
 package git
 
-import java.util.{GregorianCalendar, Date}
+import java.util.Date
+import git.util.Parser._
 
 class Commit extends Object {
   def tree: Tree = repository.database.findObjectById(treeId).asInstanceOf[Tree]
@@ -77,55 +78,21 @@ object Commit {
 
     parseParentIds()
 
-    // Two types of author fields follow next ("author" and "committer").
-    def parseAuthorFields(): Tuple3[String, String, Date] = {
-      // Name.
-      val nameBytes = data.takeWhile(_ != '<')
-      val name = new String(nameBytes).trim
-
-      data = data.drop(nameBytes.length + 1)
-
-      // Email.
-      val emailBytes = data.takeWhile(_ != '>')
-      val email = new String(emailBytes).trim
-
-      data = data.drop(emailBytes.length + 2) // One '>' and one space.
-
-      // Timestamp.
-      val timestampBytes = data.takeWhile(_ != 32)
-
-      val timestamp = new String(timestampBytes).trim.toInt
-
-      data = data.drop(timestampBytes.length + 1)
-
-      // TZ offset.
-      val tzBytes = data.takeWhile(_ != '\n')
-      val timeZoneOffset = new String(tzBytes)
-
-      data = data.drop(tzBytes.length + 1)
-
-      // Date.
-      val cal = new GregorianCalendar
-      cal.setTimeInMillis(timestamp.toLong * 1000)
-      val date = cal.getTime
-
-      // Return a tuple containing the data.
-      (name, email, date)
-    }
-
     data = data.drop(7) // Skip the "author " data.
 
-    val authorData = parseAuthorFields()
+    val authorData = parseUserFields(data)
     o.authorName = authorData._1
     o.authorEmail = authorData._2
     o.authorDate = authorData._3
+    data = authorData._4
 
     data = data.drop(10) // Skip the "committer " data.
 
-    val committerData = parseAuthorFields()
+    val committerData = parseUserFields(data)
     o.committerName = committerData._1
     o.committerEmail = committerData._2
     o.commitDate = committerData._3
+    data = committerData._4
 
     // Finally the commit message.
     o.message = new String(data).trim
