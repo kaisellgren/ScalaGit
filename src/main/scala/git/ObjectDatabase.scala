@@ -1,6 +1,6 @@
 package git
 
-import java.io.{File}
+import java.io.File
 import git.util.{Compressor, FileUtil}
 
 class ObjectDatabase(repository: Repository) {
@@ -27,6 +27,7 @@ class ObjectDatabase(repository: Repository) {
         case ObjectType.Commit => Commit.fromObjectFile(objectFileData)
         case ObjectType.Tree => Tree.fromObjectFile(objectFileData)
         case ObjectType.Blob => Blob.fromObjectFile(objectFileData)
+        case ObjectType.Tag => Tag.fromObjectFile(objectFileData)
         case _ => throw new NotImplementedError(s"Object type '${header.`type`}' is not implemented!")
       }
 
