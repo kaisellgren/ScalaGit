@@ -10,6 +10,7 @@ class Repository(var path: String) {
   var refs: ReferenceCollection = _
   var branches: List[Branch] = _
   var packIndexes: List[PackIndex] = _
+  var tags: List[Tag] = _
 
   def head: Branch = {
     branches.find((b) => b.tipId == refs.head.targetIdentifier) match {

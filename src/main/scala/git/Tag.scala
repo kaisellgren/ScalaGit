@@ -3,6 +3,8 @@ package git
 import java.util.Date
 import git.TagType.TagType
 import git.util.Parser._
+import git.util.FileUtil._
+import java.io.File
 
 class Tag extends Object {
   var taggerName: String = _
@@ -12,6 +14,15 @@ class Tag extends Object {
   var tagId: ObjectId = _
   var tagName: String = _
   var tagType: TagType = _
+
+  var targetIdentifier: ObjectId = _
+
+  def findTagRef() = {
+    val tagFile = new File(repository.path + Reference.TagPrefix + tagName)
+    targetIdentifier = ObjectId(new String(readContents(tagFile)map(_.toByte)))
+  }
+
+  def commit: Commit = repository.database.findObjectById(targetIdentifier).asInstanceOf[Commit]
 }
 
 object Tag {
