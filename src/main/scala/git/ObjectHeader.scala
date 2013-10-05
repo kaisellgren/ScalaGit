@@ -15,10 +15,10 @@ object ObjectHeader {
 
     // Figure out the object type. Read until we hit a space.
     val typeData = bytes.takeWhile(_ != 32)
-    o.`type` = ObjectType.withName(new String(typeData.map(_.toByte)))
+    o.`type` = ObjectType.withName(new String(typeData))
 
     val lengthData = bytes.drop(typeData.length + 1).takeWhile(_ != 0)
-    o.length = new String(lengthData.map(_.toByte)).toInt
+    o.length = new String(lengthData).toInt
 
     o
   }

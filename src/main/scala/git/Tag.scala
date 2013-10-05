@@ -18,7 +18,7 @@ class Tag extends Object {
 
   def findTagRef() = {
     val tagFile = new File(repository.path + Reference.TagPrefix + tagName)
-    targetIdentifier = ObjectId(new String(readContents(tagFile)map(_.toByte)))
+    targetIdentifier = ObjectId(new String(readContents(tagFile)))
   }
 
   def commit: Commit = repository.database.findObjectById(targetIdentifier).asInstanceOf[Commit]
@@ -42,19 +42,19 @@ object Tag {
     // The object file starts with "object ", let's skip that.
     var data = bytes.drop(7)
     // Followed by tag hash.
-    o.id = ObjectId.fromHash(new String(data.take(40).map(_.toByte)))
+    o.id = ObjectId.fromHash(new String(data.take(40)))
 
     data = data.drop(40 + 1) // One LF.
 
     // The tag type starts with "type ", also skip
     data = data.take(5)
-    o.tagType = TagType.withName(new String(data.takeWhile(_ != '\n').map(_.toByte)).trim)
+    o.tagType = TagType.withName(new String(data.takeWhile(_ != '\n')).trim)
 
     data = data.drop(40 + 1) // One LF.
 
     // The tag type starts with "tag ", also skip
     data = data.take(4)
-    o.tagName = new String(data.takeWhile(_ != '\n').map(_.toByte)).trim
+    o.tagName = new String(data.takeWhile(_ != '\n')).trim
 
     data = data.drop(40 + 1) // One LF.
 
@@ -67,7 +67,7 @@ object Tag {
     data = taggerData._4
 
     // Finally the tag message, if it exists.
-    o.message = Option(new String(data.map(_.toByte)).trim)
+    o.message = Option(new String(data).trim)
     o
   }
 

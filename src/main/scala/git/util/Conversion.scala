@@ -1,4 +1,5 @@
-package git.util
+package git
+package util
 
 object Conversion {
   /**
