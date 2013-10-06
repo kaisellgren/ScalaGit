@@ -36,8 +36,8 @@ object Repository {
 
     repo.refs.load()
 
-    initializeBranches(repo)
     initializePackIndexes(repo)
+    initializeBranches(repo)
 
     repo
   }

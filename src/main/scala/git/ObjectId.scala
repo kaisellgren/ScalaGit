@@ -3,6 +3,13 @@ package git
 class ObjectId {
   var sha: String = _
 
+  override def equals(o: Any) = o match {
+    case that: ObjectId => that.sha == sha
+    case _ => false
+  }
+
+  override def hashCode = sha.hashCode
+
   override def toString = s"ObjectId($sha)"
 }
 

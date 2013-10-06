@@ -1,6 +1,6 @@
 package git
 
-import java.io.File
+import java.io.{RandomAccessFile, File}
 import git.util.{Compressor, FileUtil}
 
 class ObjectDatabase(repository: Repository) {
@@ -38,7 +38,34 @@ class ObjectDatabase(repository: Repository) {
 
       obj
     } else {
-      // No object file, let's look into the pack files.
+      println("Debug: Finding from pack files.")
+
+      // No object file, let's look into the pack indices.
+      repository.packIndexes.foreach((index) => index.getOffset(id) match {
+        case Some(offset: Int) => {
+          var nextOffset = -1
+          for (i <- index.offsets) {
+            if (nextOffset == -1 || nextOffset > i && i > offset) nextOffset = i
+          }
+          if (nextOffset == null) throw new NotImplementedError("What if its the last pack objectfile?")
+
+          val raf = new RandomAccessFile(index.packFile, "r")
+          raf.seek(offset)
+          val bytes = new Array[Byte](nextOffset - offset)
+          raf.read(bytes)
+
+          val byte = bytes(0)
+          var bit6Flag = (byte & (1 << 6)) != 0
+          var bit5Flag = (byte & (1 << 5)) != 0
+          var bit4Flag = (byte & (1 << 4)) != 0
+          var length = byte & 0x0F
+          var moreFlag = (byte & (1 << 7)) != 0
+          println(moreFlag)
+          print(length)
+        }
+        case _ =>
+      })
+
       new Commit
     }
   }

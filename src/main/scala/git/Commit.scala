@@ -23,13 +23,6 @@ class Commit extends Object {
     Nil
   }
 
-  override def equals(o: Any) = o match {
-    case that: Commit => that.id.sha == id.sha
-    case _ => false
-  }
-
-  override def hashCode = id.sha.hashCode
-
   override def toString = s"Commit(message: $message)"
 }
 

@@ -10,6 +10,13 @@ class PackIndex {
   var offsets: List[Int] = _
   var packFile: File = _
   var length = 0
+
+  def has(id: ObjectId) = objectIds.contains(id)
+
+  def getOffset(id: ObjectId): Option[Int] = {
+    if (has(id)) Some(offsets(objectIds.indexOf(id)))
+    else None
+  }
 }
 
 object PackIndex {
