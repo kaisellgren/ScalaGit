@@ -79,14 +79,17 @@ object Repository {
 
   private def findTags(repo: Repository): List[Tag] = {
     val tagBuffer = new ListBuffer[Tag]()
+
     new File(repo.path + Reference.TagPrefix).listFiles().foreach((file: File) => {
-      //We read the value inside the tag file to see if it points to a tag, if so, we can add more info about it
-      val tagRef = ObjectId(new String(readContents(file)map(_.toByte)))
+      // We read the value inside the tag file to see if it points to a tag, if so, we can add more info about it.
+      val tagRef = ObjectId.fromBytes(readContents(file))
+
       repo.database.findObjectById(tagRef) match {
-        case obj:Tag =>  tagBuffer += obj
+        case obj: Tag => tagBuffer += obj
         case obj: Commit => tagBuffer += Tag.fromHashCode(ObjectId(file.getName))
       }
     })
+
     tagBuffer.toList
   }
 }

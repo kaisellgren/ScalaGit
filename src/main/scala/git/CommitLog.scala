@@ -23,11 +23,7 @@ class CommitLog(val repository: Repository) extends Traversable[Commit] {
           repository.database.findObjectById(id) match {
             case commit: Commit => {
               if (commit.id != null && !buffer.contains(commit)) buffer += commit
-              if (n > 1) {
-                commit.parentIds.foreach((id: ObjectId) => {
-                  findNSinceId(n - 1, id)
-                })
-              }
+              if (n > 1) commit.parentIds.foreach(findNSinceId(n -1, _))
             }
           }
         }
