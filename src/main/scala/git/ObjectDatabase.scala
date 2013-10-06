@@ -8,7 +8,7 @@ class ObjectDatabase(repository: Repository) {
   /**
    * Finds one Git object from the object database by its identifier.
    */
-  def findObjectById(id: ObjectId): Object = {
+  def findObjectById(id: ObjectId): Option[Object] = {
     // Try to look into the object files first.
     val file = new File(repository.path + s"/objects/${id.sha.take(2)}/${id.sha.substring(2)}")
 
@@ -24,7 +24,7 @@ class ObjectDatabase(repository: Repository) {
       // The actual object contents without the header data.
       val objectFileData = bytes.takeRight(header.length)
 
-      val obj = header.`type` match {
+      val o = header.`type` match {
         case ObjectType.Commit => Commit.fromObjectFile(objectFileData)
         case ObjectType.Tree => Tree.fromObjectFile(objectFileData)
         case ObjectType.Blob => Blob.fromObjectFile(objectFileData)
@@ -32,41 +32,25 @@ class ObjectDatabase(repository: Repository) {
         case _ => throw new NotImplementedError(s"Object type '${header.`type`}' is not implemented!")
       }
 
-      obj.header = header
-      obj.id = id
-      obj.repository = repository
+      o.header = header
+      o.id = id
+      o.repository = repository
 
-      obj
+      Some(o)
     } else {
       println("Debug: Finding from pack files.")
 
       // No object file, let's look into the pack indices.
-      repository.packIndexes.foreach((index) => index.getOffset(id) match {
-        case Some(offset: Int) => {
-          var nextOffset = -1
-          for (i <- index.offsets) {
-            if (nextOffset == -1 || nextOffset > i && i > offset) nextOffset = i
+      val o = repository.packIndexes.collectFirst {
+        case i: PackIndex => {
+          i.getOffset(id) match {
+            case Some(offset: Int) => i.packFile.loadObject(offset, id)
+            case _ => None
           }
-          if (nextOffset == null) throw new NotImplementedError("What if its the last pack objectfile?")
-
-          val raf = new RandomAccessFile(index.packFile, "r")
-          raf.seek(offset)
-          val bytes = new Array[Byte](nextOffset - offset)
-          raf.read(bytes)
-
-          val byte = bytes(0)
-          var bit6Flag = (byte & (1 << 6)) != 0
-          var bit5Flag = (byte & (1 << 5)) != 0
-          var bit4Flag = (byte & (1 << 4)) != 0
-          var length = byte & 0x0F
-          var moreFlag = (byte & (1 << 7)) != 0
-          println(moreFlag)
-          print(length)
         }
-        case _ =>
-      })
+      }
 
-      new Commit
+      Some(o.get.asInstanceOf[Object]) // TODO: Any way to avoid this mess?
     }
   }
 }

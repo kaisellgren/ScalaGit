@@ -8,7 +8,7 @@ class PackIndex {
   var fanOutTable: List[Int] = _
   var objectIds: List[ObjectId] = _
   var offsets: List[Int] = _
-  var packFile: File = _
+  var packFile: PackFile = _
   var length = 0
 
   def has(id: ObjectId) = objectIds.contains(id)

@@ -21,7 +21,7 @@ class Tag extends Object {
     targetIdentifier = ObjectId(new String(readContents(tagFile)))
   }
 
-  def commit: Commit = repository.database.findObjectById(targetIdentifier).asInstanceOf[Commit]
+  def commit: Commit = repository.database.findObjectById(targetIdentifier).get.asInstanceOf[Commit]
 }
 
 object Tag {

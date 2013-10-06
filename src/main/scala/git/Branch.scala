@@ -8,7 +8,7 @@ class Branch {
   var name: String = _
   var canonicalName: String = _
 
-  def tip: Commit = repository.database.findObjectById(tipId).asInstanceOf[Commit]
+  def tip: Commit = repository.database.findObjectById(tipId).get.asInstanceOf[Commit]
   def isTracking: Boolean = trackedBranch != null
   def commits: List[Commit] = Nil // TODO: Implement. Challenging.
 

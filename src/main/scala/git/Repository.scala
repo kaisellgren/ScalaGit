@@ -52,7 +52,10 @@ object Repository {
     new File(repo.path + "/objects/pack").listFiles.filter(_.getName.endsWith(".idx")).foreach((file: File) => {
       val index = PackIndex.fromPackIndexFile(FileUtil.readContents(file))
       val packName = file.getName.replace(".idx", ".pack")
-      index.packFile = new File(repo.path + s"/objects/pack/$packName")
+      val pack = new PackFile
+      pack.file = new File(repo.path + s"/objects/pack/$packName")
+      pack.index = index
+      index.packFile = pack
       buffer += index
     })
 
@@ -84,7 +87,7 @@ object Repository {
       // We read the value inside the tag file to see if it points to a tag, if so, we can add more info about it.
       val tagRef = ObjectId.fromBytes(readContents(file))
 
-      repo.database.findObjectById(tagRef) match {
+      repo.database.findObjectById(tagRef).get match {
         case obj: Tag => tagBuffer += obj
         case obj: Commit => tagBuffer += Tag.fromHashCode(ObjectId(file.getName))
       }

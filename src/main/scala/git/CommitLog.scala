@@ -14,13 +14,14 @@ class CommitLog(val repository: Repository) extends Traversable[Commit] {
     val sinceIds = since.map{
       case a: ObjectId => a
       case b: Branch => b.tip.id
+      case _ => throw new Exception("Invalid commit filter: does the repository HEAD exist?")
     }
 
     if (filter.sort == CommitSortStrategy.Time) {
       // Fill buffer with commits from all "since" sources.
       sinceIds.foreach((sinceId: ObjectId) => {
         def findNSinceId(n: Int, id: ObjectId) {
-          repository.database.findObjectById(id) match {
+          repository.database.findObjectById(id).get match { // TODO: Handle when this ends (None).
             case commit: Commit => {
               if (commit.id != null && !buffer.contains(commit)) buffer += commit
               if (n > 1) commit.parentIds.foreach(findNSinceId(n -1, _))

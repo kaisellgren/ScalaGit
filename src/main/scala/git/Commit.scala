@@ -4,7 +4,7 @@ import java.util.Date
 import git.util.Parser._
 
 class Commit extends Object {
-  def tree: Tree = repository.database.findObjectById(treeId).asInstanceOf[Tree]
+  def tree: Tree = repository.database.findObjectById(treeId).get.asInstanceOf[Tree]
 
   var authorName: String = _
   var authorEmail: String = _
