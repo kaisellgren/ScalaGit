@@ -1,4 +1,5 @@
-package git.util
+package git
+package util
 
 import java.io.{ByteArrayOutputStream, File, FileInputStream}
 import java.util.zip.Inflater
@@ -6,7 +7,7 @@ import java.util.zip.Inflater
 object Compressor {
   def decompressData(bytes: Array[Short]): Array[Short] = {
     val i = new Inflater
-    i.setInput(bytes.map(_.toByte))
+    i.setInput(bytes)
 
     val output = new ByteArrayOutputStream(bytes.length)
     val buffer = new Array[Byte](1024)

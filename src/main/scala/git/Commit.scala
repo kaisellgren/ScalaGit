@@ -51,17 +51,17 @@ object Commit {
     var data = bytes.drop(5)
 
     // Followed by tree hash.
-    o.treeId = ObjectId.fromHash(new String(data.take(40).map(_.toByte)))
+    o.treeId = ObjectId.fromHash(new String(data.take(40)))
 
     data = data.drop(40 + 1) // One LF.
 
     // What follows is 0-n number of parent references.
     def parseParentIds() {
       // Stop if the data does not begin with "parent".
-      if (new String(data.takeWhile(_ != 32).map(_.toByte)) == "parent") {
+      if (new String(data.takeWhile(_ != 32)) == "parent") {
         data = data.drop(7) // Skip "parent ".
 
-        o.parentIds ::= ObjectId.fromHash(new String(data.take(40).map(_.toByte)))
+        o.parentIds ::= ObjectId.fromHash(new String(data.take(40)))
 
         data = data.drop(40 + 1) // One LF.
 
@@ -88,7 +88,7 @@ object Commit {
     data = committerData._4
 
     // Finally the commit message.
-    o.message = new String(data.map(_.toByte)).trim
+    o.message = new String(data).trim
 
     o
   }

@@ -18,12 +18,12 @@ object Tree {
       val entry = new TreeEntry
 
       val modeBytes = data.takeWhile(_ != 32)
-      entry.mode = new String(modeBytes.map(_.toByte)).toInt
+      entry.mode = new String(modeBytes).toInt
 
       data = data.drop(modeBytes.length + 1)
 
       val nameBytes = data.takeWhile(_ != 0)
-      entry.name = new String(nameBytes.map(_.toByte))
+      entry.name = new String(nameBytes)
 
       data = data.drop(nameBytes.length + 1)
 

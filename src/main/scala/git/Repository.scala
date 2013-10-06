@@ -3,6 +3,8 @@ package git
 import scala.collection.mutable.ListBuffer
 import java.io.File
 import git.util.FileUtil
+import git.util.FileUtil._
+import scala.Some
 
 class Repository(var path: String) {
   var commits: CommitLog = _
@@ -10,6 +12,7 @@ class Repository(var path: String) {
   var refs: ReferenceCollection = _
   var branches: List[Branch] = _
   var packIndexes: List[PackIndex] = _
+  var tags: List[Tag] = _
 
   def head: Branch = {
     branches.find((b) => b.tipId == refs.head.targetIdentifier) match {
@@ -33,6 +36,7 @@ object Repository {
     repo.refs = new ReferenceCollection(repo)
     repo.commits = new CommitLog(repo)
     repo.database = new ObjectDatabase(repo)
+    repo.tags = findTags(repo)
 
     repo.refs.load()
 
@@ -71,5 +75,18 @@ object Repository {
     })
 
     repo.branches = buffer.toList
+  }
+
+  private def findTags(repo: Repository): List[Tag] = {
+    val tagBuffer = new ListBuffer[Tag]()
+    new File(repo.path + Reference.TagPrefix).listFiles().foreach((file: File) => {
+      //We read the value inside the tag file to see if it points to a tag, if so, we can add more info about it
+      val tagRef = ObjectId(new String(readContents(file)map(_.toByte)))
+      repo.database.findObjectById(tagRef) match {
+        case obj:Tag =>  tagBuffer += obj
+        case obj: Commit => tagBuffer += Tag.fromHashCode(ObjectId(file.getName))
+      }
+    })
+    tagBuffer.toList
   }
 }

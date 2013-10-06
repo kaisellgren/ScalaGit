@@ -1,4 +1,5 @@
-package git.util
+package git
+package util
 
 import java.io.{BufferedInputStream, File, FileInputStream}
 

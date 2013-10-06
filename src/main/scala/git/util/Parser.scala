@@ -1,4 +1,5 @@
-package git.util
+package git
+package util
 
 import java.util.{GregorianCalendar, Date}
 
@@ -8,26 +9,26 @@ object Parser {
     // Name.
     var data = tmpData
     val nameBytes = data.takeWhile(_ != '<')
-    val name = new String(nameBytes.map(_.toByte)).trim
+    val name = new String(nameBytes).trim
 
     data = data.drop(nameBytes.length + 1)
 
     // Email.
     val emailBytes = data.takeWhile(_ != '>')
-    val email = new String(emailBytes.map(_.toByte)).trim
+    val email = new String(emailBytes).trim
 
     data = data.drop(emailBytes.length + 2) // One '>' and one space.
 
     // Timestamp.
     val timestampBytes = data.takeWhile(_ != 32)
 
-    val timestamp = new String(timestampBytes.map(_.toByte)).trim.toInt
+    val timestamp = new String(timestampBytes).trim.toInt
 
     data = data.drop(timestampBytes.length + 1)
 
     // TZ offset.
     val tzBytes = data.takeWhile(_ != '\n')
-    val timeZoneOffset = new String(tzBytes.map(_.toByte))
+    val timeZoneOffset = new String(tzBytes)
 
     data = data.drop(tzBytes.length + 1)
 

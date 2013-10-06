@@ -3,15 +3,25 @@ package git
 import java.util.Date
 import git.TagType.TagType
 import git.util.Parser._
+import git.util.FileUtil._
+import java.io.File
 
 class Tag extends Object {
   var taggerName: String = _
   var taggerEmail: String = _
   var tagDate: Date = _
-  var message: String = _
-  var tagId: ObjectId = _
+  var message: Option[String] = _
   var tagName: String = _
   var tagType: TagType = _
+
+  var targetIdentifier: ObjectId = _
+
+  def findTagRef() = {
+    val tagFile = new File(repository.path + Reference.TagPrefix + tagName)
+    targetIdentifier = ObjectId(new String(readContents(tagFile)))
+  }
+
+  def commit: Commit = repository.database.findObjectById(targetIdentifier).asInstanceOf[Commit]
 }
 
 object Tag {
@@ -32,25 +42,19 @@ object Tag {
     // The object file starts with "object ", let's skip that.
     var data = bytes.drop(7)
     // Followed by tag hash.
-    o.tagId = ObjectId.fromHash(new String(data.take(40).map(_.toByte)))
+    o.id = ObjectId.fromHash(new String(data.take(40)))
 
     data = data.drop(40 + 1) // One LF.
 
     // The tag type starts with "type ", also skip
     data = data.take(5)
-    try {
-      o.tagType = TagType.withName(new String(data.takeWhile(_ != '\n').map(_.toByte)).trim)
-    }
-    catch {
-      //tag type not found
-      case e: Exception => {}
-    }
+    o.tagType = TagType.withName(new String(data.takeWhile(_ != '\n')).trim)
 
     data = data.drop(40 + 1) // One LF.
 
     // The tag type starts with "tag ", also skip
     data = data.take(4)
-    o.tagName = new String(data.takeWhile(_ != '\n').map(_.toByte)).trim
+    o.tagName = new String(data.takeWhile(_ != '\n')).trim
 
     data = data.drop(40 + 1) // One LF.
 
@@ -63,8 +67,14 @@ object Tag {
     data = taggerData._4
 
     // Finally the tag message, if it exists.
-    o.message = new String(data.map(_.toByte)).trim
+    o.message = Option(new String(data).trim)
     o
+  }
+
+  def fromHashCode(hashCode: ObjectId): Tag = {
+    val tag = new Tag
+    tag.id = hashCode
+    tag
   }
 }
 

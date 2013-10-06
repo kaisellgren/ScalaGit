@@ -20,13 +20,15 @@ class CommitLog(val repository: Repository) extends Traversable[Commit] {
       // Fill buffer with commits from all "since" sources.
       sinceIds.foreach((sinceId: ObjectId) => {
         def findNSinceId(n: Int, id: ObjectId) {
-          val commit = repository.database.findObjectById(id).asInstanceOf[Commit]
-          if (commit.id != null && !buffer.contains(commit)) buffer += commit // TODO: We can remove commit.id check once we get PackFiles ready.
-
-          if (n > 1) {
-            commit.parentIds.foreach((id: ObjectId) => {
-              findNSinceId(n - 1, id)
-            })
+          repository.database.findObjectById(id) match {
+            case commit: Commit => {
+              if (commit.id != null && !buffer.contains(commit)) buffer += commit
+              if (n > 1) {
+                commit.parentIds.foreach((id: ObjectId) => {
+                  findNSinceId(n - 1, id)
+                })
+              }
+            }
           }
         }
 
