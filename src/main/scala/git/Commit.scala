@@ -46,7 +46,7 @@ object Commit {
     var data = bytes.drop(5)
 
     // Followed by tree hash.
-    val treeId = ObjectId.fromHash(new String(data.take(40)))
+    val treeId = ObjectId(new String(data.take(40)))
 
     data = data.drop(40 + 1) // One LF.
 
@@ -58,7 +58,7 @@ object Commit {
       if (new String(data.takeWhile(_ != 32)) == "parent") {
         data = data.drop(7) // Skip "parent ".
 
-        parentIdsBuffer += ObjectId.fromHash(new String(data.take(40)))
+        parentIdsBuffer += ObjectId(new String(data.take(40)))
 
         data = data.drop(40 + 1) // One LF.
 

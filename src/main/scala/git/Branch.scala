@@ -9,7 +9,7 @@ sealed trait BaseBranch {
 
   def tip(): Commit = repository.database.findObjectById(tipId).get.asInstanceOf[Commit]
   def isTracking: Boolean = !trackedBranch.isEmpty
-  def commits(): List[Commit] = repository.commits.find(new CommitFilter() {since = List(this)})
+  def commits(): List[Commit] = repository.commits.find(CommitFilter(since = Some(List(this))))
 }
 
 case class Branch(

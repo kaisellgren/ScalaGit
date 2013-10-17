@@ -1,9 +1,9 @@
 package git
 
-class CommitFilter {
-  var limit = 100
-  var offset = 0
-  var sort = CommitSortStrategy.Time
-  var since: List[AnyRef] = _
-  var until: String = _
-}
+case class CommitFilter(
+  limit: Int = 100,
+  offset: Int = 0,
+  sort: CommitSortStrategy.CommitSortStrategy = CommitSortStrategy.Time,
+  since: Option[List[AnyRef]] = None,
+  until: Option[List[AnyRef]] = None
+)

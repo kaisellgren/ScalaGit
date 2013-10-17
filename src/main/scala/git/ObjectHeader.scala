@@ -2,12 +2,7 @@ package git
 
 import git.ObjectType.ObjectType
 
-case class ObjectHeader(
-  `type`: ObjectType,
-  length: Int = 0
-) {
-  override def toString = s"ObjectHeader(length: $length, `type`: ${`type`})"
-}
+case class ObjectHeader(`type`: ObjectType, length: Int = 0)
 
 object ObjectHeader {
   def fromObjectFile(bytes: Array[Short]): ObjectHeader = {

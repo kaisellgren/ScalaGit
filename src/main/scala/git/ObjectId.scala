@@ -1,33 +1,17 @@
 package git
 
-class ObjectId {
-  var sha: String = _
-
+case class ObjectId(sha: String) {
   override def equals(o: Any) = o match {
     case that: ObjectId => that.sha == sha
     case _ => false
   }
 
   override def hashCode = sha.hashCode
-
-  override def toString = s"ObjectId($sha)"
 }
 
 object ObjectId {
   val RawSize = 20
   val HexSize = 40
 
-  def apply(id: String) = ObjectId.fromHash(id)
-
-  def fromHash(id: String): ObjectId = {
-    val o = new ObjectId
-    o.sha = id
-    o
-  }
-
-  def fromBytes(bytes: Iterable[Short]): ObjectId = {
-    val o = new ObjectId
-    o.sha = bytes.map("%02x".format(_)).mkString
-    o
-  }
+  def fromBytes(bytes: Iterable[Short]) = ObjectId(bytes.map("%02x".format(_)).mkString)
 }
