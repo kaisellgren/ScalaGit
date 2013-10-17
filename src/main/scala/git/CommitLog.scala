@@ -9,11 +9,11 @@ class CommitLog(val repository: Repository) extends Traversable[Commit] {
     var buffer = new ListBuffer[Commit]
 
     // Prepare the "since" value. Default to HEAD.
-    val since: List[AnyRef] = if (filter.since == null) List(repository.head.tip.id) else filter.since
+    val since: List[AnyRef] = if (filter.since == null) List(repository.head.tip().id) else filter.since
 
     val sinceIds = since.map{
       case a: ObjectId => a
-      case b: Branch => b.tip.id
+      case b: Branch => b.tip().id
       case _ => throw new Exception("Invalid commit filter: does the repository HEAD exist?")
     }
 

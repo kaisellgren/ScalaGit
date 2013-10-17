@@ -7,7 +7,7 @@ class PackFile {
   var file: File = _
   var index: PackIndex = _
 
-  def loadObject(offset: Int, id: ObjectId): Object = {
+  def loadObject(offset: Int, id: ObjectId, repository: Repository): Object = {
     val raf = new RandomAccessFile(file, "r")
     raf.seek(offset)
 
@@ -39,21 +39,13 @@ class PackFile {
     raf.read(deflatedBytes)
     val objectBytes = Compressor.decompressData(deflatedBytes.map(_.toShort))
 
-    // Construct the header and the object.
-    val header = new ObjectHeader
-
-    val o = typeFlag match {
-      case PackFile.CommitBitFlag => header.`type` = ObjectType.Commit; Commit.fromObjectFile(objectBytes)
-      case PackFile.TreeBitFlag => header.`type` = ObjectType.Tree; Tree.fromObjectFile(objectBytes)
-      case PackFile.BlobBitFlag => header.`type` = ObjectType.Blob; Blob.fromObjectFile(objectBytes)
-      case PackFile.TagBitFlag => header.`type` = ObjectType.Tag; Tag.fromObjectFile(objectBytes)
+    typeFlag match {
+      case PackFile.BlobBitFlag => Blob.fromObjectFile(objectBytes, id = id, repository = repository, header = None)
+      case PackFile.CommitBitFlag => Commit.fromObjectFile(objectBytes, id = id, repository = repository, header = None)
+      case PackFile.TagBitFlag => Tag.fromObjectFile(objectBytes, id = id, repository = repository, header = None)
+      case PackFile.TreeBitFlag => Tree.fromObjectFile(objectBytes, id = id, repository = repository, header = None)
       case _ => throw new Exception(s"Could not parse object type: $typeFlag") // TODO: Deltas
     }
-
-    o.id = id
-    o.header = new ObjectHeader
-
-    o
   }
 }
 

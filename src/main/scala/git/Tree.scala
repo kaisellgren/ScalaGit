@@ -2,42 +2,49 @@ package git
 
 import scala.collection.mutable.ListBuffer
 
-class Tree extends Object {
-  var entries: List[TreeEntry] = _
-}
+case class TreeEntry(mode: Int, name: String, id: ObjectId)
+
+case class Tree(
+  override val id: ObjectId,
+  override val header: ObjectHeader,
+  override val repository: Repository,
+  entries: List[TreeEntry]
+) extends Object
 
 object Tree {
-  def fromObjectFile(bytes: Array[Short]): Tree = {
-    val o = new Tree
-
+  def fromObjectFile(bytes: Array[Short], repository: Repository, id: ObjectId, header: Option[ObjectHeader]): Tree = {
     var data = bytes.drop(0)
 
     val entryBuilder = new ListBuffer[TreeEntry]
 
     def parseEntry() {
-      val entry = new TreeEntry
-
       val modeBytes = data.takeWhile(_ != 32)
-      entry.mode = new String(modeBytes).toInt
+      val mode = new String(modeBytes).toInt
 
       data = data.drop(modeBytes.length + 1)
 
       val nameBytes = data.takeWhile(_ != 0)
-      entry.name = new String(nameBytes)
+      val name = new String(nameBytes)
 
       data = data.drop(nameBytes.length + 1)
 
-      entry.id = ObjectId.fromBytes(data.take(ObjectId.RawSize))
+      val id = ObjectId.fromBytes(data.take(ObjectId.RawSize))
 
       data = data.drop(ObjectId.RawSize)
 
-      entryBuilder += entry
+      entryBuilder += TreeEntry(mode = mode, name = name, id = id)
     }
 
     parseEntry()
 
-    o.entries = entryBuilder.toList
-
-    o
+    Tree(
+      entries = entryBuilder.toList,
+      header = header match {
+        case Some(v) => v
+        case None => ObjectHeader(ObjectType.Tree)
+      },
+      repository = repository,
+      id = id
+    )
   }
 }

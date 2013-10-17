@@ -10,21 +10,14 @@ class Repository(var path: String) {
   var commits: CommitLog = _
   var database: ObjectDatabase = _
   var refs: ReferenceCollection = _
-  var branches: List[Branch] = _
+  var branches: List[BaseBranch] = _
   var packIndexes: List[PackIndex] = _
   var tags: List[Tag] = _
 
-  def head: Branch = {
+  def head(): BaseBranch = {
     branches.find((b) => b.tipId == refs.head.targetIdentifier) match {
-      case a: Some[Branch] => a.x
-      case _ => {
-        val b = new DetachedHead()
-        b.repository = this
-        b.name = "(no branch)"
-        b.canonicalName = b.name
-        b.tipId = refs.head.targetIdentifier
-        b
-      }
+      case a: Some[BaseBranch] => a.x
+      case _ => DetachedHead(repository = this, tipId = refs.head.targetIdentifier)
     }
   }
 }
@@ -63,16 +56,23 @@ object Repository {
   }
 
   private def initializeBranches(repo: Repository) = {
-    val buffer = new ListBuffer[Branch]
+    val buffer = new ListBuffer[BaseBranch]
 
     // Construct branches.
     (repo.refs.localReferences ++ repo.refs.remoteReferences).foreach((r) => {
-      val b = new Branch
-      b.tipId = r.targetIdentifier
-      b.repository = repo
-      b.name = r.canonicalName
-      b.isRemote = repo.refs.remoteReferences.contains(r)
-      b.canonicalName = if (b.isRemote) s"remotes/${r.remote}/${b.name}" else s"origin/${b.name}"
+      val b = if (repo.refs.remoteReferences.contains(r)) RemoteBranch(
+          repository = repo,
+          tipId = r.targetIdentifier,
+          name = r.canonicalName,
+          canonicalName = s"remotes/${r.remote}/${r.canonicalName}",
+          trackedBranch = None
+        ) else Branch(
+          repository = repo,
+          tipId = r.targetIdentifier,
+          name = r.canonicalName,
+          canonicalName = s"origin/${r.canonicalName}",
+          trackedBranch = None // TODO: Implement.
+        )
 
       buffer += b
     })
@@ -80,16 +80,16 @@ object Repository {
     repo.branches = buffer.toList
   }
 
-  private def findTags(repo: Repository): List[Tag] = {
-    val tagBuffer = new ListBuffer[Tag]()
+  private def findTags(repository: Repository): List[Tag] = {
+    val tagBuffer = new ListBuffer[Tag]
 
-    new File(repo.path + Reference.TagPrefix).listFiles().foreach((file: File) => {
+    new File(repository.path + Reference.TagPrefix).listFiles().foreach((file: File) => {
       // We read the value inside the tag file to see if it points to a tag, if so, we can add more info about it.
       val tagRef = ObjectId.fromBytes(readContents(file))
 
-      repo.database.findObjectById(tagRef).get match {
+      repository.database.findObjectById(tagRef).get match {
         case obj: Tag => tagBuffer += obj
-        case obj: Commit => tagBuffer += Tag.fromHashCode(ObjectId(file.getName))
+        case obj: Commit => tagBuffer += Tag.fromHashCode(ObjectId(file.getName), repository = repository)
       }
     })
 

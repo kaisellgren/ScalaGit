@@ -24,19 +24,13 @@ class ObjectDatabase(repository: Repository) {
       // The actual object contents without the header data.
       val objectFileData = bytes.takeRight(header.length)
 
-      val o = header.`type` match {
-        case ObjectType.Commit => Commit.fromObjectFile(objectFileData)
-        case ObjectType.Tree => Tree.fromObjectFile(objectFileData)
-        case ObjectType.Blob => Blob.fromObjectFile(objectFileData)
-        case ObjectType.Tag => Tag.fromObjectFile(objectFileData)
+      Some(header.`type` match {
+        case ObjectType.Commit => Commit.fromObjectFile(objectFileData, id = id, repository = repository, header = Some(header))
+        case ObjectType.Tree => Tree.fromObjectFile(objectFileData, id = id, repository = repository, header = Some(header))
+        case ObjectType.Blob => Blob.fromObjectFile(objectFileData, id = id, repository = repository, header = Some(header))
+        case ObjectType.Tag => Tag.fromObjectFile(objectFileData, id = id, repository = repository, header = Some(header))
         case _ => throw new NotImplementedError(s"Object type '${header.`type`}' is not implemented!")
-      }
-
-      o.header = header
-      o.id = id
-      o.repository = repository
-
-      Some(o)
+      })
     } else {
       println("Debug: Finding from pack files.")
 
@@ -44,7 +38,7 @@ class ObjectDatabase(repository: Repository) {
       val o = repository.packIndexes.collectFirst {
         case i: PackIndex => {
           i.getOffset(id) match {
-            case Some(offset: Int) => i.packFile.loadObject(offset, id)
+            case Some(offset: Int) => i.packFile.loadObject(offset, id, repository)
             case _ => None
           }
         }
