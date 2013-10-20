@@ -14,14 +14,13 @@ class Repository(val path: String, val wcPath: String) {
   var packIndexes: List[PackIndex] = _
   var tags: List[Tag] = _
 
-  def head(): BaseBranch = {
-    branches.find((b) => b.tipId == refs.head.targetIdentifier) match {
-      case a: Some[BaseBranch] => a.x
-      case _ => DetachedHead(repository = this, tipId = refs.head.targetIdentifier)
+  def head(): Option[BaseBranch] = refs.head match {
+    case None => None
+    case Some(head) => branches.find(_.tipId == head.targetIdentifier) match {
+      case a: Some[BaseBranch] => Some(a.x)
+      case _ => Some(DetachedHead(repository = this, tipId = head.targetIdentifier))
     }
   }
-
-  private def isInitialized(): Boolean = new File(path + "/HEAD").exists()
 }
 
 object Repository {
@@ -30,8 +29,9 @@ object Repository {
     val workingCopyPath = path.replace(".git", "")
     val repositoryPath = workingCopyPath + "/.git"
 
-    val repo = new Repository(repositoryPath, workingCopyPath)
+    initializeRepository(repositoryPath)
 
+    val repo = new Repository(repositoryPath, workingCopyPath)
 
     repo.refs = new ReferenceCollection(repo)
     repo.commits = new CommitLog(repo)
@@ -46,18 +46,27 @@ object Repository {
     repo
   }
 
+  private def isInitialized(path: String): Boolean = new File(path + "/HEAD").exists()
+
   private def initializeRepository(path: String) {
-    new File(path + "/config").createNewFile()
-    val head = new File(path + "/HEAD")
-    head.createNewFile()
-    val writer = new PrintWriter(head)
-    writer.write("ref: refs/heads/master\n")
-    writer.close()
-    //head.
-    //Path("").to
-    //Resource.fromFile("")
-    //Source.fromFile(head).
-    //new
+    // Always ensure we have the basic folder structure.
+    new File(path).mkdirs()
+
+    new File(s"$path/objects/pack").mkdirs()
+    new File(s"$path/objects/info").mkdirs()
+    new File(s"$path/refs/heads").mkdirs()
+    new File(s"$path/refs/tags").mkdirs()
+    new File(s"$path/refs/notes").mkdirs()
+    new File(s"$path/refs/remotes").mkdirs()
+
+    // If this repository does not exist (use wishes to create a new one), then set up the remaining files.
+    if (!isInitialized(path)) {
+      FileUtil.createFileWithContents(s"$path/description", "Unnamed repository; edit this file 'description' to name the repository.\n")
+      FileUtil.createFileWithContents(s"$path/HEAD", "ref: refs/heads/master\n")
+
+      // TODO: Let's implement a Config class.
+      FileUtil.createFileWithContents(s"$path/config", "[core]\n\trepositoryformatversion = 0\n\tfilemode = false\n\tbare = false\n\tlogallrefupdates = true\n\tsymlinks = false\n\tignorecase = true\n\thideDotFiles = dotGitOnly")
+    }
   }
 
   private def initializePackIndexes(repo: Repository) {

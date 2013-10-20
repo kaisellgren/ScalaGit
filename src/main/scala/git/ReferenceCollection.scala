@@ -5,7 +5,7 @@ import scala.io._
 import scala.collection.mutable.ListBuffer
 
 class ReferenceCollection(val repository: Repository) {
-  var head: Reference = _
+  var head: Option[Reference] = _
   var localReferences: List[Reference] = _
   var remoteReferences: List[Reference] = _
 
@@ -36,6 +36,6 @@ class ReferenceCollection(val repository: Repository) {
     // Create the HEAD reference. Read the HEAD file and figure out the canonical name.
     val regex = s"""(?s).*refs/heads/([a-zA-Z0-9]+).*""".r
     val canonicalName = regex.findFirstMatchIn(Source.fromFile(repository.path + "/HEAD").mkString).get.group(1)
-    head = localReferences.find((r: Reference) => r.canonicalName == canonicalName).get
+    head = localReferences.find((r: Reference) => r.canonicalName == canonicalName)
   }
 }
