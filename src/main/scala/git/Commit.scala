@@ -1,8 +1,8 @@
 package git
 
-import java.util.Date
+import java.util.{Calendar, Date}
 import git.util.Parser._
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 case class Commit(
   override val id: ObjectId,
@@ -24,6 +24,23 @@ case class Commit(
 }
 
 object Commit {
+  def toObjectFile(commit: Commit): List[Byte] = {
+    val buffer = new ListBuffer[Byte]
+
+    buffer.appendAll(s"tree ${commit.treeId.sha}\n".getBytes)
+
+    commit.parentIds.foreach(id => {
+      buffer.appendAll(s"parent ${id.sha}\n".getBytes)
+    })
+
+    buffer.appendAll(s"author ${commit.authorName} <${commit.authorEmail}> ${dateToGitFormat(commit.authorDate)}\n".getBytes)
+    buffer.appendAll(s"committer ${commit.committerName} <${commit.committerEmail}> ${dateToGitFormat(commit.commitDate)}\n".getBytes)
+
+    buffer.appendAll(s"\n${commit.message}".getBytes)
+
+    buffer.toList
+  }
+
   def fromObjectFile(bytes: Array[Short], repository: Repository, id: ObjectId, header: Option[ObjectHeader]): Commit = {
     /*
       Example structure:
