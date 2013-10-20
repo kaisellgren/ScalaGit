@@ -1,12 +1,12 @@
 package git
 
 import scala.collection.mutable.ListBuffer
-import java.io.File
+import java.io.{PrintWriter, File}
 import git.util.FileUtil
 import git.util.FileUtil._
 import scala.Some
 
-class Repository(var path: String) {
+class Repository(val path: String, val wcPath: String) {
   var commits: CommitLog = _
   var database: ObjectDatabase = _
   var refs: ReferenceCollection = _
@@ -20,11 +20,18 @@ class Repository(var path: String) {
       case _ => DetachedHead(repository = this, tipId = refs.head.targetIdentifier)
     }
   }
+
+  private def isInitialized(): Boolean = new File(path + "/HEAD").exists()
 }
 
 object Repository {
   def open(path: String): Repository = {
-    val repo = new Repository(path)
+    // TODO: Find a better way.
+    val workingCopyPath = path.replace(".git", "")
+    val repositoryPath = workingCopyPath + "/.git"
+
+    val repo = new Repository(repositoryPath, workingCopyPath)
+
 
     repo.refs = new ReferenceCollection(repo)
     repo.commits = new CommitLog(repo)
@@ -37,6 +44,20 @@ object Repository {
     initializeBranches(repo)
 
     repo
+  }
+
+  private def initializeRepository(path: String) {
+    new File(path + "/config").createNewFile()
+    val head = new File(path + "/HEAD")
+    head.createNewFile()
+    val writer = new PrintWriter(head)
+    writer.write("ref: refs/heads/master\n")
+    writer.close()
+    //head.
+    //Path("").to
+    //Resource.fromFile("")
+    //Source.fromFile(head).
+    //new
   }
 
   private def initializePackIndexes(repo: Repository) {
