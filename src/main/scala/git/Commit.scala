@@ -21,11 +21,14 @@ case class Commit(
   def tree(): Tree = repository.database.findObjectById(treeId).get.asInstanceOf[Tree]
 
   def parents(): List[Commit] = Nil // TODO: Implement.
+  def toObjectFile = Commit.toObjectFile(this)
 }
 
 object Commit {
   def toObjectFile(commit: Commit): List[Byte] = {
     val buffer = new ListBuffer[Byte]
+
+    // TODO: Where do we create the ID?
 
     buffer.appendAll(s"tree ${commit.treeId.sha}\n".getBytes)
 
@@ -37,6 +40,9 @@ object Commit {
     buffer.appendAll(s"committer ${commit.committerName} <${commit.committerEmail}> ${dateToGitFormat(commit.commitDate)}\n".getBytes)
 
     buffer.appendAll(s"\n${commit.message}".getBytes)
+
+    // Insert the header in the beginning.
+    buffer.insertAll(0, ObjectHeader(`type` = ObjectType.Commit, length = buffer.length).toObjectFile())
 
     buffer.toList
   }

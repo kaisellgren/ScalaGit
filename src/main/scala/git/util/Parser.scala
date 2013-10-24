@@ -49,7 +49,7 @@ object Parser {
   def dateToGitFormat(date: Date): String = {
     //val cal = new Calendar // TODO: Get timezone offsets to work.
     //new SimpleDateFormat("").parse()
-    s"${date.getTime} +0000"
+    s"${date.getTime / 1000} +0000"
   }
 
   /**

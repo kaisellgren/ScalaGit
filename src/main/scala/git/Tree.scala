@@ -9,7 +9,9 @@ case class Tree(
   override val header: ObjectHeader,
   override val repository: Repository,
   entries: List[TreeEntry]
-) extends Object
+) extends Object {
+  def toObjectFile = Nil
+}
 
 object Tree {
   def fromObjectFile(bytes: Array[Short], repository: Repository, id: ObjectId, header: Option[ObjectHeader]): Tree = {

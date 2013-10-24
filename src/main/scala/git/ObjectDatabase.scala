@@ -4,6 +4,19 @@ import java.io.{RandomAccessFile, File}
 import git.util.{Compressor, FileUtil}
 
 class ObjectDatabase(repository: Repository) {
+  private[git] def +=(obj: Object) = {
+    val folderName = obj.id.sha.substring(0, 2)
+    val filename = obj.id.sha.substring(2)
+    val folderPath = s"${repository.path}/objects/$folderName"
+
+    new File(folderPath).mkdirs()
+
+    FileUtil.writeToFile(new File(s"$folderPath/$filename"), Compressor.compressData(obj.toObjectFile))
+  }
+
+  private[git] def -=(obj: Object) = {
+
+  }
 
   /**
    * Finds one Git object from the object database by its identifier.

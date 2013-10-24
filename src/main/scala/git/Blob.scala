@@ -8,9 +8,10 @@ case class Blob(
   contents: List[Short] // TODO: We have to make sure we don't unnecessarily create blobs and consume memory...
 ) extends Object {
   def isBinary(): Boolean = {
-    // TODO: Try to find at least one null byte.
     false
   }
+
+  def toObjectFile = Nil
 }
 
 object Blob {

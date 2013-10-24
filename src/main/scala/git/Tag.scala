@@ -18,11 +18,8 @@ case class Tag(
   tagType: TagType,
   targetIdentifier: ObjectId
 ) extends Object {
-  /*def findTagRef() = {
-    targetIdentifier = ObjectId(new String(readContents(new File(repository.path + Reference.TagPrefix + tagName))))
-  }*/
-
   def commit(): Commit = repository.database.findObjectById(targetIdentifier).get.asInstanceOf[Commit]
+  def toObjectFile = Nil
 }
 
 object Tag {

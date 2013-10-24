@@ -1,3 +1,4 @@
 .idea
 /out/
 target/
+src/test/resources/repositories/*

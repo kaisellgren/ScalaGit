@@ -1,7 +1,7 @@
 package git
 package util
 
-import java.io.{PrintWriter, BufferedInputStream, File, FileInputStream}
+import java.io.{PrintWriter, BufferedInputStream, File, FileInputStream, FileOutputStream}
 
 object FileUtil {
   def readContents(file: File): Array[Short] = {
@@ -11,16 +11,21 @@ object FileUtil {
     bytes
   }
 
-  def writeToFile(file: File, data: String) = {
-    val writer = new PrintWriter(file)
-    writer.write(data)
-    writer.close()
+  def writeToFile(file: File, data: Array[Byte]) = {
+    if (!file.canWrite) throw new Exception(s"File is not writable: ${file.getName}")
+
+    val fos = new FileOutputStream(file)
+    try {
+      fos.write(data)
+    } finally {
+      fos.close()
+    }
   }
   
   def createFileWithContents(path: String, data: String) = {
     val f = new File(path)
     f.createNewFile()
 
-    FileUtil.writeToFile(f, data)
+    FileUtil.writeToFile(f, data.getBytes)
   }
 }
