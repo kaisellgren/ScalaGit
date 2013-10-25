@@ -3,6 +3,7 @@ package git
 import java.util.{Calendar, Date}
 import git.util.Parser._
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
+import git.util.DataReader
 
 case class Commit(
   override val id: ObjectId,
@@ -48,69 +49,47 @@ object Commit {
   }
 
   def fromObjectFile(bytes: List[Byte], repository: Repository, id: ObjectId, header: Option[ObjectHeader]): Commit = {
-    /*
-      Example structure:
+    val reader = new DataReader(bytes)
 
-	    "tree" <SP> <HEX_OBJ_ID> <LF>
-		  ( "parent" <SP> <HEX_OBJ_ID> <LF> )*
-		  "author" <SP>
-  		  <SAFE_NAME> <SP>
-  		  <LT> <SAFE_EMAIL> <GT> <SP>
-  		  <GIT_DATE> <LF>
-  		"committer" <SP>
-  		  <SAFE_NAME> <SP>
-  	    <LT> <SAFE_EMAIL> <GT> <SP>
-  		  <GIT_DATE> <LF>
-  		<LF>
-  		<DATA>
-    */
-
-    // The object file starts with "tree ", let's skip that.
-    var data = bytes.drop(5)
+    if (reader.takeString(5) != "tree ") throw new Exception("Corrupted Commit object file.")
 
     // Followed by tree hash.
-    val treeId = ObjectId(new String(data.take(40)))
+    val treeId = reader.takeStringBasedObjectId()
 
-    data = data.drop(40 + 1) // One LF.
+    reader ++ 1 // LF.
 
     val parentIdsBuffer = new ListBuffer[ObjectId]
 
     // What follows is 0-n number of parent references.
     def parseParentIds() {
       // Stop if the data does not begin with "parent".
-      if (new String(data.takeWhile(_ != 32)) == "parent") {
-        data = data.drop(7) // Skip "parent ".
+      if (reader.takeStringWhile(_ != ' ') == "parent") {
+        reader ++ 1 // Space.
 
-        parentIdsBuffer += ObjectId(new String(data.take(40)))
+        parentIdsBuffer += reader.takeStringBasedObjectId()
 
-        data = data.drop(40 + 1) // One LF.
+        reader ++ 1 // LF.
 
         parseParentIds()
       }
     }
 
-    val parentIds = parentIdsBuffer.toList
-
     parseParentIds()
 
-    data = data.drop(7) // Skip the "author " data.
+    val parentIds = parentIdsBuffer.toList
 
-    val authorData = parseUserFields(data)
-    val authorName = authorData._1
-    val authorEmail = authorData._2
-    val authorDate = authorData._3
-    data = authorData._4
+    reader -- 6 // The parent ID parsing goes 6 bytes too far ("parent").
 
-    data = data.drop(10) // Skip the "committer " data.
+    if (reader.takeString(7) != "author ") throw new Exception("Corrupted Commit object file.")
 
-    val committerData = parseUserFields(data)
-    val committerName = committerData._1
-    val committerEmail = committerData._2
-    val commitDate = committerData._3
-    data = committerData._4
+    val author = parseUserFields(reader)
+
+    if (reader.takeString(10) != "committer ") throw new Exception("Corrupted Commit object file.")
+
+    val committer = parseUserFields(reader)
 
     // Finally the commit message.
-    val message = new String(data).trim
+    val message = new String(reader.getRest).trim
 
     Commit(
       id = id,
@@ -119,12 +98,12 @@ object Commit {
         case None => ObjectHeader(ObjectType.Commit)
       },
       repository = repository,
-      authorName = authorName,
-      authorEmail = authorEmail,
-      authorDate = authorDate,
-      committerName = committerName,
-      committerEmail = committerEmail,
-      commitDate = commitDate,
+      authorName = author.name,
+      authorEmail = author.email,
+      authorDate = author.date,
+      committerName = committer.name,
+      committerEmail = committer.email,
+      commitDate = committer.date,
       message = message,
       treeId = treeId,
       parentIds = parentIds

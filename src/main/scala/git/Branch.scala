@@ -28,10 +28,7 @@ case class RemoteBranch(
  canonicalName: String
 ) extends BaseBranch
 
-case class DetachedHead(
-  repository: Repository,
-  tipId: ObjectId
-) extends BaseBranch {
+case class DetachedHead(repository: Repository, tipId: ObjectId) extends BaseBranch {
   def name = "(no branch)"
   def canonicalName = "(no branch)"
   def trackedBranch = None

@@ -1,6 +1,7 @@
 package git
 
 import scala.collection.mutable.ListBuffer
+import git.util.DataReader
 
 case class TreeEntry(mode: Int, name: String, id: ObjectId)
 
@@ -15,26 +16,20 @@ case class Tree(
 
 object Tree {
   def fromObjectFile(bytes: List[Byte], repository: Repository, id: ObjectId, header: Option[ObjectHeader]): Tree = {
-    var data = bytes.drop(0)
+    val reader = new DataReader(bytes)
 
     val entryBuilder = new ListBuffer[TreeEntry]
 
     def parseEntry() {
-      val modeBytes = data.takeWhile(_ != 32)
-      val mode = new String(modeBytes).toInt
+      val mode = reader.takeStringWhile(_ != ' ').toInt
 
-      data = data.drop(modeBytes.length + 1)
+      reader ++ 1 // Space.
 
-      val nameBytes = data.takeWhile(_ != 0)
-      val name = new String(nameBytes)
+      val name = reader.takeStringWhile(_ != 0)
 
-      data = data.drop(nameBytes.length + 1)
+      reader ++ 1 // Null.
 
-      val id = ObjectId.fromBytes(data.take(ObjectId.RawSize))
-
-      data = data.drop(ObjectId.RawSize)
-
-      entryBuilder += TreeEntry(mode = mode, name = name, id = id)
+      entryBuilder += TreeEntry(mode = mode, name = name, id = reader.takeObjectId())
     }
 
     parseEntry()

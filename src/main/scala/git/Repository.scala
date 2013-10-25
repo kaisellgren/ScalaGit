@@ -1,9 +1,8 @@
 package git
 
 import scala.collection.mutable.ListBuffer
-import java.io.{PrintWriter, File}
+import java.io.{File}
 import git.util.FileUtil
-import git.util.FileUtil._
 import scala.Some
 
 class Repository(val path: String, val wcPath: String) {
@@ -115,11 +114,11 @@ object Repository {
 
     new File(repository.path + Reference.TagPrefix).listFiles().foreach((file: File) => {
       // We read the value inside the tag file to see if it points to a tag, if so, we can add more info about it.
-      val tagRef = ObjectId.fromBytes(readContents(file))
+      val tagRef = ObjectId.fromBytes(FileUtil.readContents(file))
 
       repository.database.findObjectById(tagRef).get match {
         case obj: Tag => tagBuffer += obj
-        case obj: Commit => tagBuffer += Tag.fromHashCode(ObjectId(file.getName), repository = repository)
+        case obj: Commit => tagBuffer += Tag.fromHashCode(ObjectId(FileUtil.readString(file).trim), repository = repository, name = file.getName)
       }
     })
 

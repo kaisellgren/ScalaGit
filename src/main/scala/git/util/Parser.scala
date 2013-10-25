@@ -1,46 +1,39 @@
 package git
 package util
 
-import java.util.{Calendar, GregorianCalendar, Date}
+import java.util.{TimeZone, Calendar, GregorianCalendar, Date}
 import java.text.SimpleDateFormat
+
+case class UserFields(name: String, email: String, date: Date)
 
 object Parser {
   /**
    * Parses author fields from the given bytes.
    */
-  def parseUserFields(tmpData: List[Byte]): (String, String, Date, List[Byte]) = { // TODO: Return case class
-    // Name.
-    var data = tmpData
-    val nameBytes = data.takeWhile(_ != '<')
-    val name = new String(nameBytes).trim
+  def parseUserFields(reader: DataReader): UserFields = {
+    val name = reader.takeStringWhile(_ != '<').trim
 
-    data = data.drop(nameBytes.length + 1)
+    reader ++ 1 // <
 
-    // Email.
-    val emailBytes = data.takeWhile(_ != '>')
-    val email = new String(emailBytes).trim
+    val email = reader.takeStringWhile(_ != '>').trim
 
-    data = data.drop(emailBytes.length + 2) // One '>' and one space.
+    reader ++ 2 // One '>' and one space.
 
     // Timestamp.
-    val timestampBytes = data.takeWhile(_ != 32)
-    val timestamp = new String(timestampBytes).trim.toLong
+    val timestamp = reader.takeStringWhile(_ != ' ').trim.toLong
 
-    data = data.drop(timestampBytes.length + 1)
+    reader ++ 1 // Space.
 
     // TZ offset.
-    val tzBytes = data.takeWhile(_ != '\n')
-    val timeZoneOffset = new String(tzBytes) // TODO: We aren't using these
+    val timeZoneOffset = reader.takeStringWhile(_ != '\n')
 
-    data = data.drop(tzBytes.length + 1)
+    reader ++ 1 // LF.
 
     // Date.
-    val cal = new GregorianCalendar // TODO:
+    val cal = new GregorianCalendar(TimeZone.getTimeZone(s"GMT$timeZoneOffset"))
     cal.setTimeInMillis(timestamp * 1000)
-    val date = cal.getTime
 
-    // Return a tuple containing the data.
-    (name, email, date, data)
+    UserFields(name = name, email = email, date = cal.getTime)
   }
 
   /**

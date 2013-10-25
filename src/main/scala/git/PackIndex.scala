@@ -1,7 +1,7 @@
 package git
 
 import scala.collection.mutable.ListBuffer
-import git.util.Conversion
+import git.util.{DataReader, Conversion}
 import java.io.File
 
 class PackIndex {
@@ -23,52 +23,39 @@ object PackIndex {
   def fromPackIndexFile(bytes: List[Byte]): PackIndex = {
     val o = new PackIndex
 
-    var data = bytes
+    val reader = new DataReader(bytes)
 
     // Confirm the header is correct.
-    if (data.take(4).toArray.deep != Array(0xff, 0x74, 0x4f, 0x63).map(_.toByte).deep) throw new Exception("Index file header signature is corrupt.")
-
-    data = data.drop(4)
+    if (reader.take(4).toArray.deep != Array(0xff, 0x74, 0x4f, 0x63).map(_.toByte).deep) throw new Exception("Index file header signature is corrupt.")
 
     // Confirm the version.
-    if (data.take(4).toArray.deep != Array(0, 0, 0, 2).map(_.toByte).deep) throw new Exception("Older Pack Index file format is not supported.")
-
-    data = data.drop(4)
+    if (reader.take(4).toArray.deep != Array(0, 0, 0, 2).map(_.toByte).deep) throw new Exception("Older Pack Index file format is not supported.")
 
     // Create the fan-out table.
     val fanOutBuffer = new ListBuffer[Int]
 
-    for (i <- 0 to 255) {
-      fanOutBuffer += Conversion.bytesToValue(data.slice(i * 4, i * 4 + 4))
-    }
+    for (i <- 0 to 255) fanOutBuffer += Conversion.bytesToValue(reader.take(4))
 
     o.fanOutTable = fanOutBuffer.toList
 
     // Set the length (the last value of the fan-out table).
     o.length = o.fanOutTable.last
 
-    data = data.drop(256 * 4)
-
     // Set the object id table.
     val objectIdBuffer = new ListBuffer[ObjectId]
 
-    for (i <- 0 to o.length - 1) {
-      objectIdBuffer += ObjectId.fromBytes(data.slice(i * 20, i * 20 + 20))
-    }
+    for (i <- 0 to o.length - 1) objectIdBuffer += reader.takeObjectId()
 
     o.objectIds = objectIdBuffer.toList
 
-    data = data.drop(o.length * 20)
-
     // Skip CRC32's for now.
-    data = data.drop(o.length * 4)
+    reader ++ o.length * 4
 
     // Let's set the offsets.
     val offsetBuffer = new ListBuffer[Int]
 
-    for (i <- 0 to o.length - 1) {
-      offsetBuffer += Conversion.bytesToValue(data.slice(i * 4, i * 4 + 4)) // TODO: Implement support for very large offsets (>4 GB pack files).
-    }
+    // TODO: Implement support for very large offsets (>4 GB pack files).
+    for (i <- 0 to o.length - 1) offsetBuffer += Conversion.bytesToValue(reader.take(4))
 
     o.offsets = offsetBuffer.toList
 

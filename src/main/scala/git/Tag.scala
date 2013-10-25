@@ -5,6 +5,7 @@ import git.TagType.TagType
 import git.util.Parser._
 import git.util.FileUtil._
 import java.io.File
+import git.util.DataReader
 
 case class Tag(
   override val id: ObjectId,
@@ -24,49 +25,35 @@ case class Tag(
 
 object Tag {
   def fromObjectFile(bytes: List[Byte], repository: Repository, id: ObjectId, header: Option[ObjectHeader]): Tag = {
-    /*
-      Example structure:
-      "object" <SP> <HEX_OBJ_ID> <LF>
-      "type" <SP> <OBJ_TYPE> <LF>
-      "tag" <SP> <TAG_NAME> <LF>
-      "tagger" <SP>
-        <SAFE_NAME> <SP>
-        <LT> <SAFE_EMAIL> <GT> <SP>
-        <GIT_DATE> <LF>
-      <LF>
-      <DATA>
-     */
+    val reader = new DataReader(bytes)
 
-    // The object file starts with "object ", let's skip that.
-    var data = bytes.drop(7)
+    if (reader.takeString(7) != "object ") throw new Exception("Corrupted Tag object.")
 
     // Followed by tag hash.
-    val targetIdentifier = ObjectId.fromBytes(data.take(40))
+    val targetIdentifier = reader.takeObjectId()
 
-    data = data.drop(40 + 1) // One LF.
+    reader ++ 1 // LF.
 
-    // The tag type starts with "type ", also skip.
-    data = data.take(5)
-    val tagType = TagType.withName(new String(data.takeWhile(_ != '\n')).trim)
+    // Followed by the type.
+    if (reader.takeString(5) != "type ") throw new Exception("Corrupted Tag object.")
 
-    data = data.drop(40 + 1) // One LF.
+    val tagType = TagType.withName(reader.takeStringWhile(_ != '\n'))
+
+    reader ++ 1 // LF.
 
     // The tag type starts with "tag ", also skip.
-    data = data.take(4)
-    val tagName = new String(data.takeWhile(_ != '\n')).trim
+    if (reader.takeString(4) != "tag ") throw new Exception("Corrupted Tag object.")
 
-    data = data.drop(40 + 1) // One LF.
+    val tagName = reader.takeStringWhile(_ != '\n')
 
-    data = data.drop(7) // Skip the "tagger " data.
+    reader ++ 1 // LF.
 
-    val taggerData = parseUserFields(data)
-    val taggerName = Option(taggerData._1)
-    val taggerEmail = Option(taggerData._2)
-    val tagDate = Option(taggerData._3)
-    data = taggerData._4
+    if (reader.takeString(7) != "tagger ") throw new Exception("Corrupted Tag object.")
+
+    val tagger = parseUserFields(reader)
 
     // Finally the tag message, if it exists.
-    val message = Option(new String(data).trim)
+    val message = Option(reader.getRestAsString)
 
     Tag(
       id = id,
@@ -78,16 +65,16 @@ object Tag {
       targetIdentifier = targetIdentifier,
       tagType = tagType,
       message = message,
-      taggerName = taggerName,
-      taggerEmail = taggerEmail,
-      tagDate = tagDate,
+      taggerName = Some(tagger.name),
+      taggerEmail = Some(tagger.email),
+      tagDate = Some(tagger.date),
       tagName = tagName
     )
   }
 
-  def fromHashCode(hashCode: ObjectId, repository: Repository): Tag = {
+  def fromHashCode(hashCode: ObjectId, repository: Repository, name: String): Tag = {
     Tag(
-      id = hashCode,
+      id = hashCode, // TODO: Wrong!
       repository = repository,
       header = ObjectHeader(ObjectType.Tag),
       tagType = TagType.Lightweight,
@@ -95,7 +82,7 @@ object Tag {
       taggerName = None,
       taggerEmail = None,
       tagDate = None,
-      tagName = "todo", // TODO
+      tagName = name,
       targetIdentifier = hashCode // TODO: Wrong!
     )
   }

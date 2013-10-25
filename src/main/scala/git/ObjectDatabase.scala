@@ -45,8 +45,6 @@ class ObjectDatabase(repository: Repository) {
         case _ => throw new NotImplementedError(s"Object type '${header.`type`}' is not implemented!")
       })
     } else {
-      println("Debug: Finding from pack files.")
-
       // No object file, let's look into the pack indices.
       val o = repository.packIndexes.collectFirst {
         case i: PackIndex => {
