@@ -14,7 +14,7 @@ case class Tree(
 }
 
 object Tree {
-  def fromObjectFile(bytes: Array[Short], repository: Repository, id: ObjectId, header: Option[ObjectHeader]): Tree = {
+  def fromObjectFile(bytes: List[Byte], repository: Repository, id: ObjectId, header: Option[ObjectHeader]): Tree = {
     var data = bytes.drop(0)
 
     val entryBuilder = new ListBuffer[TreeEntry]

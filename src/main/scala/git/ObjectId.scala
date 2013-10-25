@@ -13,5 +13,5 @@ object ObjectId {
   val RawSize = 20
   val HexSize = 40
 
-  def fromBytes(bytes: Iterable[Short]) = ObjectId(bytes.map("%02x".format(_)).mkString)
+  def fromBytes(bytes: List[Byte]) = ObjectId(bytes.map("%02x".format(_)).mkString)
 }

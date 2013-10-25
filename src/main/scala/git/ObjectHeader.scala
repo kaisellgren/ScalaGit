@@ -18,7 +18,7 @@ object ObjectHeader {
     buffer.toList
   }
 
-  def fromObjectFile(bytes: Array[Short]): ObjectHeader = {
+  def fromObjectFile(bytes: List[Byte]): ObjectHeader = {
     // Figure out the object type. Read until we hit a space.
     val typeData = bytes.takeWhile(_ != 32)
     val t = ObjectType.withName(new String(typeData))

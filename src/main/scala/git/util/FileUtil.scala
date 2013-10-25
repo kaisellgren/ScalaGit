@@ -1,22 +1,22 @@
 package git
 package util
 
-import java.io.{PrintWriter, BufferedInputStream, File, FileInputStream, FileOutputStream}
+import java.io.{BufferedInputStream, File, FileInputStream, FileOutputStream}
 
 object FileUtil {
-  def readContents(file: File): Array[Short] = {
+  def readContents(file: File): List[Byte] = {
     val bis = new BufferedInputStream(new FileInputStream(file))
-    val bytes = Stream.continually(bis.read).takeWhile(-1 !=).map(_.toShort).toArray
+    val bytes = Stream.continually(bis.read).takeWhile(-1 !=).map(_.toByte).toList
 
     bytes
   }
 
-  def writeToFile(file: File, data: Array[Byte]) = {
+  def writeToFile(file: File, data: List[Byte]) = {
     if (!file.canWrite) throw new Exception(s"File is not writable: ${file.getName}")
 
     val fos = new FileOutputStream(file)
     try {
-      fos.write(data)
+      fos.write(data.toArray)
     } finally {
       fos.close()
     }
@@ -26,6 +26,6 @@ object FileUtil {
     val f = new File(path)
     f.createNewFile()
 
-    FileUtil.writeToFile(f, data.getBytes)
+    FileUtil.writeToFile(f, data.getBytes.toList)
   }
 }

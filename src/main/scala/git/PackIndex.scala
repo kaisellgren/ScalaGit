@@ -20,18 +20,18 @@ class PackIndex {
 }
 
 object PackIndex {
-  def fromPackIndexFile(bytes: Array[Short]): PackIndex = {
+  def fromPackIndexFile(bytes: List[Byte]): PackIndex = {
     val o = new PackIndex
 
     var data = bytes
 
     // Confirm the header is correct.
-    if (data.take(4).deep != Array(0xff, 0x74, 0x4f, 0x63).deep) throw new Exception("Index file header signature is corrupt.")
+    if (data.take(4).toArray.deep != Array(0xff, 0x74, 0x4f, 0x63).map(_.toByte).deep) throw new Exception("Index file header signature is corrupt.")
 
     data = data.drop(4)
 
     // Confirm the version.
-    if (data.take(4).deep != Array(0, 0, 0, 2).deep) throw new Exception("Older Pack Index file format is not supported.")
+    if (data.take(4).toArray.deep != Array(0, 0, 0, 2).map(_.toByte).deep) throw new Exception("Older Pack Index file format is not supported.")
 
     data = data.drop(4)
 

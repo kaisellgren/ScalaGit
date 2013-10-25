@@ -8,7 +8,7 @@ object Parser {
   /**
    * Parses author fields from the given bytes.
    */
-  def parseUserFields(tmpData: Array[Short]): (String, String, Date, Array[Short]) = { // TODO: Return case class
+  def parseUserFields(tmpData: List[Byte]): (String, String, Date, List[Byte]) = { // TODO: Return case class
     // Name.
     var data = tmpData
     val nameBytes = data.takeWhile(_ != '<')

@@ -23,7 +23,7 @@ case class Tag(
 }
 
 object Tag {
-  def fromObjectFile(bytes: Array[Short], repository: Repository, id: ObjectId, header: Option[ObjectHeader]): Tag = {
+  def fromObjectFile(bytes: List[Byte], repository: Repository, id: ObjectId, header: Option[ObjectHeader]): Tag = {
     /*
       Example structure:
       "object" <SP> <HEX_OBJ_ID> <LF>

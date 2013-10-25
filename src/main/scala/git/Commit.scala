@@ -47,7 +47,7 @@ object Commit {
     buffer.toList
   }
 
-  def fromObjectFile(bytes: Array[Short], repository: Repository, id: ObjectId, header: Option[ObjectHeader]): Commit = {
+  def fromObjectFile(bytes: List[Byte], repository: Repository, id: ObjectId, header: Option[ObjectHeader]): Commit = {
     /*
       Example structure:
 

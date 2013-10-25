@@ -37,7 +37,7 @@ class PackFile {
     // Retrieve the object data.
     val deflatedBytes = new Array[Byte](length)
     raf.read(deflatedBytes)
-    val objectBytes = Compressor.decompressData(deflatedBytes.map(_.toShort))
+    val objectBytes = Compressor.decompressData(deflatedBytes.toList)
 
     typeFlag match {
       case PackFile.BlobBitFlag => Blob.fromObjectFile(objectBytes, id = id, repository = repository, header = None)
