@@ -7,7 +7,9 @@ import git.util.Conversion
 object test {
   def main(args: Array[String]) {
     // Create our default repository.
-    val repo = Repository.open(new File("C:\\Projects\\mailer").getAbsolutePath)
+    val repo = Repository.open(new File(".").getAbsolutePath)
+
+    repo.index.entries.foreach((e) => println(e.name))
 
     //println(repo.head().get.tip().message)
     repo.commits.find(new CommitFilter).foreach((c) => {

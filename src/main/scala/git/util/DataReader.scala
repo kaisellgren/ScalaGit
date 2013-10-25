@@ -5,11 +5,13 @@ import scala.collection.mutable.ListBuffer
 
 /** A simple data reader utility that abstracts out the mutable state. */
 class DataReader(data: List[Byte]) {
-  private var position = 0
+  private var _position = 0
+
+  def position = _position
 
   /** Take `length` amount of bytes and move forward. */
   def take(length: Int): List[Byte] = {
-    position += length
+    _position += length
     data.slice(position - length, position)
   }
 
@@ -23,7 +25,7 @@ class DataReader(data: List[Byte]) {
       i += 1
     }
 
-    position += i
+    _position += i
 
     buffer.toList
   }
@@ -50,7 +52,7 @@ class DataReader(data: List[Byte]) {
   def get(length: Int): List[Byte] = data.slice(position, position + length)
 
   /** Skip `length` amount of bytes. */
-  def skip(length: Int) = position += length
+  def skip(length: Int) = _position += length
 
   def ++(length: Int) = skip(length)
   def --(length: Int) = skip(-length)

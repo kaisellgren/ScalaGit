@@ -44,7 +44,7 @@ object PackIndex {
     // Set the object id table.
     val objectIdBuffer = new ListBuffer[ObjectId]
 
-    for (i <- 0 to o.length - 1) objectIdBuffer += reader.takeObjectId()
+    for (i <- 0 until o.length) objectIdBuffer += reader.takeObjectId()
 
     o.objectIds = objectIdBuffer.toList
 
@@ -55,7 +55,7 @@ object PackIndex {
     val offsetBuffer = new ListBuffer[Int]
 
     // TODO: Implement support for very large offsets (>4 GB pack files).
-    for (i <- 0 to o.length - 1) offsetBuffer += Conversion.bytesToValue(reader.take(4))
+    for (i <- 0 until o.length) offsetBuffer += Conversion.bytesToValue(reader.take(4))
 
     o.offsets = offsetBuffer.toList
 
