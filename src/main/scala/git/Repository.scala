@@ -1,7 +1,7 @@
 package git
 
 import scala.collection.mutable.ListBuffer
-import java.io.{File}
+import java.io.File
 import git.util.FileUtil
 import scala.Some
 
@@ -11,6 +11,7 @@ class Repository(val path: String, val wcPath: String) {
   var refs: ReferenceCollection = _
   var branches: List[BaseBranch] = _
   var packIndexes: List[PackIndex] = _
+  var index: Index = _
   var tags: List[Tag] = _
 
   def head(): Option[BaseBranch] = refs.head match {
@@ -39,6 +40,7 @@ object Repository {
 
     repo.refs.load()
 
+    initializeIndex(repo)
     initializePackIndexes(repo)
     initializeBranches(repo)
 
@@ -66,6 +68,10 @@ object Repository {
       // TODO: Let's implement a Config class.
       FileUtil.createFileWithContents(s"$path/config", "[core]\n\trepositoryformatversion = 0\n\tfilemode = false\n\tbare = false\n\tlogallrefupdates = true\n\tsymlinks = false\n\tignorecase = true\n\thideDotFiles = dotGitOnly")
     }
+  }
+
+  private def initializeIndex(repo: Repository) {
+    repo.index = Index.fromBytes(FileUtil.readContents(new File(s"${repo.path}/index")))
   }
 
   private def initializePackIndexes(repo: Repository) {
