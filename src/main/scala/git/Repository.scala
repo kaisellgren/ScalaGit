@@ -71,7 +71,7 @@ object Repository {
   }
 
   private def initializeIndex(repo: Repository) {
-    repo.index = Index.fromBytes(FileUtil.readContents(new File(s"${repo.path}/index")))
+    repo.index = IndexFile.fromBytes(FileUtil.readContents(new File(s"${repo.path}/index")))
   }
 
   private def initializePackIndexes(repo: Repository) {

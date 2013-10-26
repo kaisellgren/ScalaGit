@@ -3,8 +3,6 @@ package git
 import java.util.Date
 import git.TagType.TagType
 import git.util.Parser._
-import git.util.FileUtil._
-import java.io.File
 import git.util.DataReader
 
 case class Tag(
