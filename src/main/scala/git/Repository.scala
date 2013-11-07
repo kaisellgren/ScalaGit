@@ -14,6 +14,9 @@ class Repository(val path: String, val wcPath: String) {
   var index: Index = _
   var tags: List[Tag] = _
 
+  /** Returns a fresh Index status. */
+  def status(): Index = Index.fromFile(new File(s"$path/index"), wcPath = wcPath)
+
   def head(): Option[BaseBranch] = refs.head match {
     case None => None
     case Some(head) => branches.find(_.tipId == head.targetIdentifier) match {
@@ -40,7 +43,6 @@ object Repository {
 
     repo.refs.load()
 
-    initializeIndex(repo)
     initializePackIndexes(repo)
     initializeBranches(repo)
 
@@ -68,10 +70,6 @@ object Repository {
       // TODO: Let's implement a Config class.
       FileUtil.createFileWithContents(s"$path/config", "[core]\n\trepositoryformatversion = 0\n\tfilemode = false\n\tbare = false\n\tlogallrefupdates = true\n\tsymlinks = false\n\tignorecase = true\n\thideDotFiles = dotGitOnly")
     }
-  }
-
-  private def initializeIndex(repo: Repository) {
-    repo.index = IndexFile.fromBytes(FileUtil.readContents(new File(s"${repo.path}/index")))
   }
 
   private def initializePackIndexes(repo: Repository) {

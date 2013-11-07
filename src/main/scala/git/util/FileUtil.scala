@@ -30,4 +30,9 @@ object FileUtil {
 
     FileUtil.writeToFile(f, data.getBytes.toList)
   }
+
+  def recursiveListFiles(file: File): Array[File] = {
+    val these = file.listFiles
+    these ++ these.filter(_.isDirectory).flatMap(recursiveListFiles)
+  }
 }

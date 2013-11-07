@@ -81,9 +81,9 @@ object IndexFile {
       val signature = reader.take(4)
       val size = Conversion.bytesToValue(reader.take(4))
       val data = reader.take(size)
-      println(signature)
+      /*println(signature)
       println(size)
-      println(new String(data.toArray))
+      println(new String(data.toArray))*/
     }
 
     // Checksum.
