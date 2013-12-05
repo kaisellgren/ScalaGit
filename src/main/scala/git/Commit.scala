@@ -43,7 +43,7 @@ object Commit {
     buffer.appendAll(s"\n${commit.message}".getBytes)
 
     // Insert the header in the beginning.
-    buffer.insertAll(0, ObjectHeader(`type` = ObjectType.Commit, length = buffer.length).toObjectFile())
+    buffer.insertAll(0, ObjectHeader(typ = ObjectType.Commit, length = buffer.length).toObjectFile())
 
     buffer.toList
   }

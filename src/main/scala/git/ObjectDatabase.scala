@@ -37,12 +37,12 @@ class ObjectDatabase(repository: Repository) {
       // The actual object contents without the header data.
       val objectFileData = bytes.takeRight(header.length)
 
-      Some(header.`type` match {
+      Some(header.typ match {
         case ObjectType.Commit => Commit.fromObjectFile(objectFileData, id = id, repository = repository, header = Some(header))
         case ObjectType.Tree => Tree.fromObjectFile(objectFileData, id = id, repository = repository, header = Some(header))
         case ObjectType.Blob => Blob.fromObjectFile(objectFileData, id = id, repository = repository, header = Some(header))
         case ObjectType.Tag => Tag.fromObjectFile(objectFileData, id = id, repository = repository, header = Some(header))
-        case _ => throw new NotImplementedError(s"Object type '${header.`type`}' is not implemented!")
+        case _ => throw new NotImplementedError(s"Object type '${header.typ}' is not implemented!")
       })
     } else {
       // No object file, let's look into the pack indices.

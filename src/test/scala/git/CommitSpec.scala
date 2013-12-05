@@ -14,7 +14,7 @@ class CommitSpec extends FlatSpec with Matchers {
 
     c.id should be (ObjectId("b744d5cddb5095249299d95ee531cbd990741140"))
     c.repository should be (r)
-    c.header.`type` should be (ObjectType.Commit)
+    c.header.typ should be (ObjectType.Commit)
     c.authorName should be ("Kai")
     c.authorEmail should be ("kaisellgren@gmail.com")
     c.authorDate should be (cal.getTime)
