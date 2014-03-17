@@ -11,7 +11,7 @@ object CreateRepositories {
     val cal = new GregorianCalendar(2000, 5, 4, 2, 3, 4)
     cal.setTimeZone(TimeZone.getTimeZone("UTC"))
 
-    val c = Commit(
+    /*repo.database += Commit(
       id = ObjectId("b744d5cddb5095249299d95ee531cbd990741140"),
       repository = repo,
       header = ObjectHeader(ObjectType.Commit),
@@ -24,8 +24,6 @@ object CreateRepositories {
       message = "Whatsup",
       treeId = ObjectId("b744d5cddb5095249299d95ee531cbd990741140"),
       parentIds = Nil
-    )
-
-    repo.database += c
+    )*/
   }
 }
