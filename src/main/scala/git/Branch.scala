@@ -63,7 +63,7 @@ object Branch {
 
   def tip(branch: Branch)(repository: Repository): Option[Commit] = ObjectDatabase.findObjectById(repository, branch.tipId) match {
     case Some(o: Commit) => Some(o)
-    case None => None
+    case _ => None
   }
 
   def commits(branch: Branch)(repository: Repository): Seq[Commit] = Commit.find(CommitFilter(since = Some(List(branch))))(repository)

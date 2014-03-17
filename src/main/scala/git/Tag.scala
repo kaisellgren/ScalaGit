@@ -36,8 +36,8 @@ case class Tag(
 
 object Tag {
   def commit(tag: Tag)(repository: Repository): Option[Commit] = ObjectDatabase.findObjectById(repository, tag.targetIdentifier) match {
-    case o: Commit => Some(o)
-    case None => None
+    case Some(o: Commit) => Some(o)
+    case _ => None
   }
 
   def find(filter: Option[TagFilter])(repository: Repository): Seq[Tag] = {

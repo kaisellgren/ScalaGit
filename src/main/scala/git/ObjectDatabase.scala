@@ -57,7 +57,7 @@ object ObjectDatabase {
     } else {
       // No object file, let's look into the pack indices.
       @tailrec
-      def find(indexes: Vector[PackIndex]): Option[Object] = {
+      def find(indexes: Seq[PackIndex]): Option[Object] = {
         if (indexes.length == 0) None
         else indexes.head.getOffset(id) match {
           case Some(offset: Int) => Some(indexes.head.packFile.loadObject(offset, id, repository))

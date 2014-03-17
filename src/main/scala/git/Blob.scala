@@ -24,7 +24,7 @@ case class Blob(
 ) extends Object
 
 object Blob {
-  def fromObjectFile(bytes: List[Byte], id: ObjectId, repository: Repository, header: Option[ObjectHeader]): Blob = Blob(
+  def fromObjectFile(bytes: Seq[Byte], id: ObjectId, repository: Repository, header: Option[ObjectHeader]): Blob = Blob(
     id = id,
     header = header match {
       case Some(v) => v

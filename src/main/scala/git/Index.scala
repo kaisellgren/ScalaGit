@@ -35,14 +35,13 @@ object Index {
   def status(repository: Repository): Index = Index.fromFile(new File(s"${repository.path}/index"), wcPath = repository.wcPath)
 
   def retrieveFileStatus(file: File): Int = {
-    FileStatus.Current
     ???
   }
 
   def fromFile(file: File, wcPath: String): Index = {
     val indexFile = IndexFile.fromBytes(FileUtil.readContents(file))
     val ignore = Ignore.fromPath(wcPath)
-    val ignoreDirectories = Some(List(new File(PathUtil.combine(wcPath, ".git"))))
+    val ignoreDirectories = List(new File(PathUtil.combine(wcPath, ".git")))
 
     val entries = FileUtil.recursiveListFiles(new File(wcPath), ignoreDirectories = ignoreDirectories).collect{
       case file: File => indexFile.entries.find((e) => PathUtil.combine(wcPath, e.name) == file.getAbsolutePath) match {

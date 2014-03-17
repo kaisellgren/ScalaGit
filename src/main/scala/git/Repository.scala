@@ -27,13 +27,13 @@ case class Repository(
 )
 
 object Repository {
-  private[git] def head(repository: Repository) = {
+  private[git] def head(repository: Repository): Option[BaseBranch] = {
     val refs = Reference.find(repository)
 
     refs.head match {
       case None => None
       case Some(head) => Branch.find(repository).find(_.tipId == head.targetIdentifier) match {
-        case a: Some[BaseBranch] => Some(a.x)
+        case Some(a: BaseBranch) => Some(a)
         case _ => Some(DetachedHead(tipId = head.targetIdentifier))
       }
     }
