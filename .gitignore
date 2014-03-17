@@ -4,3 +4,4 @@
 target/
 src/test/resources/repositories/*
 api.txt
+src/test/scala/test
