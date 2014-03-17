@@ -1,5 +1,0 @@
-package git
-
-class ff {
-
-}

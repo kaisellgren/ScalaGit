@@ -3,3 +3,4 @@
 /out/
 target/
 src/test/resources/repositories/*
+api.txt
