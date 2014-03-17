@@ -1,35 +1,70 @@
+/*
+ * Copyright (c) 2014 the original author or authors.
+ *
+ * Licensed under the MIT License;
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at:
+ *
+ * http://opensource.org/licenses/MIT
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package git
 
 sealed trait BaseBranch {
-  def repository: Repository
   def trackedBranch: Option[BaseBranch]
   def tipId: ObjectId
   def name: String
   def canonicalName: String
 
-  def tip(): Commit = repository.database.findObjectById(tipId).get.asInstanceOf[Commit]
   def isTracking: Boolean = !trackedBranch.isEmpty
-  def commits(): List[Commit] = repository.commits.find(CommitFilter(since = Some(List(this))))
 }
 
 case class Branch(
-  repository: Repository,
   trackedBranch: Option[BaseBranch],
   tipId: ObjectId,
   name: String,
-  canonicalName: String
+  canonicalName: String,
+  isRemote: Boolean = false
 ) extends BaseBranch
 
-case class RemoteBranch(
- repository: Repository,
- trackedBranch: Option[BaseBranch],
- tipId: ObjectId,
- name: String,
- canonicalName: String
-) extends BaseBranch
-
-case class DetachedHead(repository: Repository, tipId: ObjectId) extends BaseBranch {
+case class DetachedHead(tipId: ObjectId) extends BaseBranch {
   def name = "(no branch)"
   def canonicalName = "(no branch)"
   def trackedBranch = None
+}
+
+object Branch {
+  def find(repository: Repository): Seq[Branch] = {
+    val buffer = Vector.newBuilder[Branch]
+
+    val refs = Reference.find(repository)
+
+    // Construct branches.
+    refs.references.foreach((r) => {
+      val isRemote = refs.remoteReferences.contains(r)
+
+      buffer += Branch(
+        tipId = r.targetIdentifier,
+        name = r.canonicalName,
+        isRemote = isRemote,
+        canonicalName = if (isRemote) s"remotes/${r.remoteName.get}/${r.canonicalName}" else s"origin/${r.canonicalName}",
+        trackedBranch = None // TODO: Implement for isRemote
+      )
+    })
+
+    buffer.result()
+  }
+
+  def tip(branch: Branch)(repository: Repository): Option[Commit] = ObjectDatabase.findObjectById(repository, branch.tipId) match {
+    case Some(o: Commit) => Some(o)
+    case None => None
+  }
+
+  def commits(branch: Branch)(repository: Repository): Seq[Commit] = Commit.find(CommitFilter(since = Some(List(branch))))(repository)
 }

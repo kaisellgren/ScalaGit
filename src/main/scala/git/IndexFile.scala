@@ -1,21 +1,37 @@
+/*
+ * Copyright (c) 2014 the original author or authors.
+ *
+ * Licensed under the MIT License;
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at:
+ *
+ * http://opensource.org/licenses/MIT
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package git
 
 import java.util.{GregorianCalendar, Date}
 import git.util.{Conversion, DataReader}
 import scala.collection.mutable.ListBuffer
 
-sealed case class IndexFileHeader(version: Int, entryCount: Int)
+case class IndexFileHeader(version: Int, entryCount: Int)
 
-sealed case class IndexFileEntryStat(ctime: Date, mtime: Date, device: Int, inode: Int, mode: Int, uid: Int, gid: Int, size: Int)
+case class IndexFileEntryStat(ctime: Date, mtime: Date, device: Int, inode: Int, mode: Int, uid: Int, gid: Int, size: Int)
 
-sealed case class IndexFileEntry(stat: IndexFileEntryStat, id: ObjectId, flags: List[Byte], name: String, padding: Int)
+case class IndexFileEntry(stat: IndexFileEntryStat, id: ObjectId, flags: Seq[Byte], name: String, padding: Int)
 
-sealed case class IndexFileExtension(name: List[Byte], size: Int, data: List[Byte])
+case class IndexFileExtension(name: Seq[Byte], size: Int, data: Seq[Byte])
 
-case class IndexFile(header: IndexFileHeader, checksum: ObjectId, entries: List[IndexFileEntry], extensions: List[IndexFileExtension])
+case class IndexFile(header: IndexFileHeader, checksum: ObjectId, entries: Seq[IndexFileEntry], extensions: Seq[IndexFileExtension])
 
 object IndexFile {
-  def fromBytes(bytes: List[Byte]) = {
+  def fromBytes(bytes: Seq[Byte]) = {
     val reader = new DataReader(bytes)
 
     if (reader.takeString(4) != "DIRC") throw new Exception("Corrupted Index file.")
@@ -28,7 +44,7 @@ object IndexFile {
     if (header.version > 2) throw new Exception(s"Index file format version ${header.version} not supported.")
 
     /** Turns a two 4-byte lists into one `Date` object. */
-    def createTime(seconds: List[Byte], nanoseconds: List[Byte]): Date = {
+    def createTime(seconds: Seq[Byte], nanoseconds: Seq[Byte]): Date = {
       val cal = new GregorianCalendar
       cal.setTimeInMillis(Conversion.bytesToValue(seconds) * 1000)
       cal.getTime

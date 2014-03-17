@@ -1,13 +1,29 @@
+/*
+ * Copyright (c) 2014 the original author or authors.
+ *
+ * Licensed under the MIT License;
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at:
+ *
+ * http://opensource.org/licenses/MIT
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package git
 
 import scala.collection.mutable.ListBuffer
-import git.util.{DataReader, Conversion}
+import git.util.{FileUtil, DataReader, Conversion}
 import java.io.File
 
 class PackIndex {
-  var fanOutTable: List[Int] = _
-  var objectIds: List[ObjectId] = _
-  var offsets: List[Int] = _
+  var fanOutTable: Seq[Int] = _
+  var objectIds: Seq[ObjectId] = _
+  var offsets: Seq[Int] = _
   var packFile: PackFile = _
   var length = 0
 
@@ -20,7 +36,7 @@ class PackIndex {
 }
 
 object PackIndex {
-  def fromPackIndexFile(bytes: List[Byte]): PackIndex = {
+  def fromPackIndexFile(bytes: Seq[Byte]): PackIndex = {
     val o = new PackIndex
 
     val reader = new DataReader(bytes)
@@ -60,5 +76,21 @@ object PackIndex {
     o.offsets = offsetBuffer.toList
 
     o
+  }
+
+  private[git] def findPackIndexes(repository: Repository): Seq[PackIndex] = {
+    val buffer = Vector.newBuilder[PackIndex]
+
+    new File(repository.path + "/objects/pack").listFiles.filter(_.getName.endsWith(".idx")).foreach((file: File) => {
+      val index = PackIndex.fromPackIndexFile(FileUtil.readContents(file))
+      val packName = file.getName.replace(".idx", ".pack")
+      val pack = new PackFile
+      pack.file = new File(repository.path + s"/objects/pack/$packName")
+      pack.index = index
+      index.packFile = pack
+      buffer += index
+    })
+
+    buffer.result()
   }
 }
