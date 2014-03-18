@@ -65,7 +65,7 @@ object PackIndex {
     o.objectIds = objectIdBuffer.toList
 
     // Skip CRC32's for now.
-    reader ++ o.length * 4
+    reader >> o.length * 4
 
     // Let's set the offsets.
     val offsetBuffer = new ListBuffer[Int]

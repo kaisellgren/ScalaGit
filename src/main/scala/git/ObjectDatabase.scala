@@ -16,13 +16,8 @@
 
 package git
 
-import java.io.{RandomAccessFile, File}
+import java.io.File
 import git.util.{Compressor, FileUtil}
-import scalaz._
-import Scalaz._
-import scala.io.Source
-import scalaz.Source
-import scala.collection.mutable.ListBuffer
 import scala.annotation.tailrec
 
 object ObjectDatabase {

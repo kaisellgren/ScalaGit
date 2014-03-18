@@ -18,16 +18,22 @@ package git.util
 
 import git.ObjectId
 import scala.collection.mutable.ListBuffer
+import scala.annotation.tailrec
+import scala.concurrent.stm._
 
-/** A simple data reader utility that abstracts out the mutable state. */
+case object Take
+
+/** A simple data reader utility for Scala Git data parsing and manipulation purposes. */
 class DataReader(data: Seq[Byte]) {
-  private var _position = 0
+  private[this] val _position = Ref(0)
 
-  def position = _position
+  def position = atomic { implicit txn =>
+    _position()
+  }
 
   /** Take `length` amount of bytes and move forward. */
   def take(length: Int): Seq[Byte] = {
-    _position += length
+    skip(length)
     data.slice(position - length, position)
   }
 
@@ -35,13 +41,18 @@ class DataReader(data: Seq[Byte]) {
   def takeWhile(p: Byte => Boolean): Seq[Byte] = {
     val buffer = new ListBuffer[Byte]
 
-    var i = 0
-    while (p(data.slice(position + i, position + i + 1)(0))) {
-      buffer += data.slice(position + i, position + i + 1)(0)
-      i += 1
+    @tailrec
+    def iterate(acc: Int): Unit = {
+      val byte = data(position + acc)
+      if (p(byte)) {
+        buffer += byte
+        iterate(acc + 1)
+      }
     }
 
-    _position += i
+    iterate(0)
+
+    skip(buffer.length)
 
     buffer.toList
   }
@@ -68,8 +79,10 @@ class DataReader(data: Seq[Byte]) {
   def get(length: Int): Seq[Byte] = data.slice(position, position + length)
 
   /** Skip `length` amount of bytes. */
-  def skip(length: Int) = _position += length
+  def skip(length: Int) = atomic { implicit txn =>
+    _position() = _position() + length
+  }
 
-  def ++(length: Int) = skip(length)
-  def --(length: Int) = skip(-length)
+  def >>(length: Int) = skip(length)
+  def <<(length: Int) = skip(-length)
 }

@@ -114,7 +114,7 @@ object Commit {
     // Followed by tree hash.
     val treeId = reader.takeStringBasedObjectId()
 
-    reader ++ 1 // LF.
+    reader >> 1 // LF.
 
     val parentIdsBuffer = new ListBuffer[ObjectId]
 
@@ -122,11 +122,11 @@ object Commit {
     def parseParentIds() {
       // Stop if the data does not begin with "parent".
       if (reader.takeStringWhile(_ != ' ') == "parent") {
-        reader ++ 1 // Space.
+        reader >> 1 // Space.
 
         parentIdsBuffer += reader.takeStringBasedObjectId()
 
-        reader ++ 1 // LF.
+        reader >> 1 // LF.
 
         parseParentIds()
       }
@@ -136,7 +136,7 @@ object Commit {
 
     val parentIds = parentIdsBuffer.toList
 
-    reader -- 6 // The parent ID parsing goes 6 bytes too far ("parent").
+    reader << 6 // The parent ID parsing goes 6 bytes too far ("parent").
 
     if (reader.takeString(7) != "author ") throw new Exception("Corrupted Commit object file.")
 

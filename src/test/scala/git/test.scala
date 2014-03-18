@@ -14,11 +14,11 @@ object test {
   def main(args: Array[String]) {
     val repo = Repository.open(new File(".").getAbsolutePath)
 
-
     //val tag = git.tag("testing")(repo)
     //println(tag)
     //Tag.delete("testing")(repo)
-    Tag.find(repo).foreach(println)
+    println(Repository.head(repo).get.tipId)
+    //Tag.find(repo).foreach(println)
     //}
     /*println(repo.foos)
 

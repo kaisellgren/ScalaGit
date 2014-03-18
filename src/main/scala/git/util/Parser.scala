@@ -28,21 +28,21 @@ object Parser {
   def parseUserFields(reader: DataReader): UserFields = {
     val name = reader.takeStringWhile(_ != '<').trim
 
-    reader ++ 1 // <
+    reader >> 1 // <
 
     val email = reader.takeStringWhile(_ != '>').trim
 
-    reader ++ 2 // One '>' and one space.
+    reader >> 2 // One '>' and one space.
 
     // Timestamp.
     val timestamp = reader.takeStringWhile(_ != ' ').trim.toLong
 
-    reader ++ 1 // Space.
+    reader >> 1 // Space.
 
     // TZ offset.
     val timeZoneOffset = reader.takeStringWhile(_ != '\n')
 
-    reader ++ 1 // LF.
+    reader >> 1 // LF.
 
     // Date.
     val cal = new GregorianCalendar(TimeZone.getTimeZone(s"GMT$timeZoneOffset"))

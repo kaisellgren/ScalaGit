@@ -85,7 +85,7 @@ object IndexFile {
       // Null padding 1-8 bytes, retaining the total size in multiple of eight.
       val total = if (62 + name.length % 8 == 0) 62 + name.length + 8 else 62 + name.length
       val padding = 8 - (total % 8)
-      reader ++ padding // TODO: Is this needed somewhere (other than for a marker purposes)?
+      reader >> padding // TODO: Is this needed somewhere (other than for a marker purposes)?
 
       entryBuffer += IndexFileEntry(stat = stat, id = id, flags = flags, name = name, padding = padding)
     }

@@ -111,21 +111,21 @@ object Tag {
     // Followed by tag hash.
     val targetIdentifier = reader.takeObjectId()
 
-    reader ++ 1 // LF.
+    reader >> 1 // LF.
 
     // Followed by the type.
     if (reader.takeString(5) != "type ") throw new Exception("Corrupted Tag object.")
 
     val tagType = TagType.withName(reader.takeStringWhile(_ != '\n'))
 
-    reader ++ 1 // LF.
+    reader >> 1 // LF.
 
     // The tag type starts with "tag ", also skip.
     if (reader.takeString(4) != "tag ") throw new Exception("Corrupted Tag object.")
 
     val tagName = reader.takeStringWhile(_ != '\n')
 
-    reader ++ 1 // LF.
+    reader >> 1 // LF.
 
     if (reader.takeString(7) != "tagger ") throw new Exception("Corrupted Tag object.")
 

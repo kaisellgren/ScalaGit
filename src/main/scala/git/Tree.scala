@@ -36,11 +36,11 @@ object Tree {
     def parseEntry() {
       val mode = reader.takeStringWhile(_ != ' ').toInt
 
-      reader ++ 1 // Space.
+      reader >> 1 // Space.
 
       val name = reader.takeStringWhile(_ != 0)
 
-      reader ++ 1 // Null.
+      reader >> 1 // Null.
 
       entryBuilder += TreeEntry(mode = mode, name = name, id = reader.takeObjectId())
     }
