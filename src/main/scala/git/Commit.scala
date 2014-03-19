@@ -36,7 +36,7 @@ case class Commit(
 ) extends Object
 
 object Commit {
-  def find(filter: CommitFilter)(repository: Repository): Seq[Commit] = {
+  def find(filter: Option[CommitFilter])(repository: Repository): Seq[Commit] = {
     val buffer = Vector.newBuilder[Commit]
 
     // Prepare the "since" value.
@@ -76,6 +76,8 @@ object Commit {
 
     ???
   }
+
+  def find(repository: Repository): Seq[Commit] = find(filter = None)(repository)
 
   def tree(commit: Commit)(repository: Repository): Tree = ObjectDatabase.findObjectById(repository, commit.treeId) match {
     case Some(o: Tree) => o

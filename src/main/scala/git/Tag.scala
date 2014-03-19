@@ -35,9 +35,9 @@ case class Tag(
 ) extends Object
 
 object Tag {
-  def commit(tag: Tag)(repository: Repository): Option[Commit] = ObjectDatabase.findObjectById(repository, tag.targetIdentifier) match {
-    case Some(o: Commit) => Some(o)
-    case _ => None
+  def commit(tag: Tag)(repository: Repository): Commit = ObjectDatabase.findObjectById(repository, tag.targetIdentifier) match {
+    case Some(c: Commit) => c
+    case _ => throw new Exception(s"Could not find the commit the tag points to: ${tag.targetIdentifier}")
   }
 
   def find(filter: Option[TagFilter])(repository: Repository): Seq[Tag] = {
@@ -73,7 +73,7 @@ object Tag {
 
   def delete(tag: Tag)(repository: Repository): Unit = delete(tag.name)(repository)
 
-  def create(name: String, targetId: Option[ObjectId])(repository: Repository) = {
+  def create(name: String, targetId: Option[ObjectId] = None)(repository: Repository) = {
     val actualTargetId = targetId match {
       case Some(id: ObjectId) => id
       case None => Repository.head(repository) match {

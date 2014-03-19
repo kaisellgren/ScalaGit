@@ -66,5 +66,5 @@ object Branch {
     case _ => None
   }
 
-  def commits(branch: Branch)(repository: Repository): Seq[Commit] = Commit.find(CommitFilter(since = Some(List(branch))))(repository)
+  def commits(branch: Branch)(repository: Repository): Seq[Commit] = Commit.find(Some(CommitFilter(since = Some(List(branch)))))(repository)
 }
