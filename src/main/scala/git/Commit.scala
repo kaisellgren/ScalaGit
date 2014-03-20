@@ -36,31 +36,32 @@ case class Commit(
 ) extends Object
 
 object Commit {
-  def find(filter: Option[CommitFilter])(repository: Repository): Seq[Commit] = {
-    val buffer = Vector.newBuilder[Commit]
+  def find(filter: CommitFilter = CommitFilter())(repository: Repository): Seq[Commit] = {
+    val buffer = Set.newBuilder[Commit]
 
     // Prepare the "since" value.
-    /*val sinceIds = filter.since match {
+    val sinceIds = filter.since match {
       // Defaults to HEAD.
-      case None => repository.head() match {
+      case None => Repository.head(repository) match {
         case None => throw new Exception("No HEAD has been set and you queried for commits using HEAD as the 'since' value of the filter.")
-        case Some(head) => List(head.tip().id)
+        case Some(head: BaseBranch) => List(Branch.tip(head)(repository).id)
       }
 
       case Some(list) => list.map{
-        case a: ObjectId => a
-        case b: Branch => b.tip().id
+        case id: ObjectId => id
+        case b: Branch => Branch.tip(b)(repository).id
         case _ => throw new Exception("Invalid commit filter: you passed an invalid object as part of 'since'.")
       }
     }
 
     if (filter.sort == CommitSortStrategy.Time) {
-      // Fill buffer with commits from all "since" sources.
+      // Fill the buffer with commits from all "since" sources.
+      // TODO: Improve.
       sinceIds.foreach((sinceId: ObjectId) => {
         def findNSinceId(n: Int, id: ObjectId) {
-          repository.database.findObjectById(id).get match { // TODO: Handle when this ends (None).
+          ObjectDatabase.findObjectById(repository, id).get match { // TODO: Handle when this ends (None).
             case commit: Commit => {
-              if (commit.id != null && !buffer.contains(commit)) buffer += commit
+              if (commit.id != null) buffer += commit
               if (n > 1) commit.parentIds.foreach(findNSinceId(n -1, _))
             }
           }
@@ -69,15 +70,13 @@ object Commit {
         findNSinceId(filter.limit, sinceId)
       })
 
-      buffer = buffer.sortBy(_.commitDate).take(filter.limit)
-    }*/
-
-    buffer.result()
-
-    ???
+      buffer.result().toVector.sortBy(_.commitDate).take(filter.limit)
+    } else {
+      buffer.result().toVector
+    }
   }
 
-  def find(repository: Repository): Seq[Commit] = find(filter = None)(repository)
+  def find(repository: Repository): Seq[Commit] = find()(repository)
 
   def tree(commit: Commit)(repository: Repository): Tree = ObjectDatabase.findObjectById(repository, commit.treeId) match {
     case Some(o: Tree) => o

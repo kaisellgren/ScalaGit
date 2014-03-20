@@ -54,8 +54,8 @@ object ObjectDatabase {
       @tailrec
       def find(indexes: Seq[PackIndex]): Option[Object] = {
         if (indexes.length == 0) None
-        else indexes.head.getOffset(id) match {
-          case Some(offset: Int) => Some(indexes.head.packFile.loadObject(offset, id, repository))
+        else indexes.head.findOffset(id) match {
+          case Some(offset: Int) => Some(PackFile.loadObject(repository, indexes.head.packFile, offset, id))
           case _ => find(indexes.tail)
         }
       }

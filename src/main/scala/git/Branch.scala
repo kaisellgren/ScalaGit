@@ -21,6 +21,7 @@ sealed trait BaseBranch {
   def tipId: ObjectId
   def name: String
   def canonicalName: String
+  def isRemote: Boolean = false
 
   def isTracking: Boolean = !trackedBranch.isEmpty
 }
@@ -30,7 +31,7 @@ case class Branch(
   tipId: ObjectId,
   name: String,
   canonicalName: String,
-  isRemote: Boolean = false
+  override val isRemote: Boolean = false
 ) extends BaseBranch
 
 case class DetachedHead(tipId: ObjectId) extends BaseBranch {
@@ -61,10 +62,10 @@ object Branch {
     buffer.result()
   }
 
-  def tip(branch: Branch)(repository: Repository): Option[Commit] = ObjectDatabase.findObjectById(repository, branch.tipId) match {
-    case Some(o: Commit) => Some(o)
-    case _ => None
+  def tip(branch: BaseBranch)(repository: Repository): Commit = ObjectDatabase.findObjectById(repository, branch.tipId) match {
+    case Some(o: Commit) => o
+    case _ => throw new Exception(s"Could not find the commit the branch ${branch.name} points to.")
   }
 
-  def commits(branch: Branch)(repository: Repository): Seq[Commit] = Commit.find(Some(CommitFilter(since = Some(List(branch)))))(repository)
+  def commits(branch: BaseBranch)(repository: Repository): Seq[Commit] = Commit.find(CommitFilter(since = Some(List(branch))))(repository)
 }

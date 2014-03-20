@@ -35,9 +35,6 @@ class IgnoreSpec extends FlatSpec with Matchers {
 
   val ignoreFile = Ignore(entries = rules, root = new File("src/test/resources/ignore-tests"))
 
-  //println(ignoreFile.isIgnored(new File("src/test/resources/ignore-tests/foo/target/")))
-  //println(ignoreFile.isIgnored(new File("src/test/resources/ignore-tests/foo/target/a.txt")))
-
   files.foreach((file) => {
     if (ignoreFile.isIgnored(file)) {
       s"${file.getPath}" should "be ignored" in {
