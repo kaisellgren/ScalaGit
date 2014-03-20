@@ -19,12 +19,20 @@ package git
 import java.io.{RandomAccessFile, File}
 import git.util.Compressor
 
-class PackFile {
-  var file: File = _
-  var index: PackIndex = _
+case class PackFile(file: File)
 
-  def loadObject(offset: Int, id: ObjectId, repository: Repository): Object = {
-    val raf = new RandomAccessFile(file, "r")
+object PackFile {
+  // Pre-defined bit flags.
+  val ExtendedBitFlag = 0
+  val CommitBitFlag = 1
+  val TreeBitFlag = 2
+  val BlobBitFlag = 3
+  val TagBitFlag = 4
+  val ReservedBitFlag = 5
+  val OffsetDelta = 6
+
+  def loadObject(repository: Repository, pack: PackFile, offset: Int, id: ObjectId): Object = {
+    val raf = new RandomAccessFile(pack.file, "r")
     raf.seek(offset)
 
     val bytes = new Array[Byte](1)
@@ -63,15 +71,4 @@ class PackFile {
       case _ => throw new Exception(s"Could not parse object type: $typeFlag") // TODO: Deltas
     }
   }
-}
-
-object PackFile {
-  // Pre-defined bit flags.
-  val ExtendedBitFlag = 0
-  val CommitBitFlag = 1
-  val TreeBitFlag = 2
-  val BlobBitFlag = 3
-  val TagBitFlag = 4
-  val ReservedBitFlag = 5
-  val OffsetDelta = 6
 }
