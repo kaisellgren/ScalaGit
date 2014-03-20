@@ -33,7 +33,7 @@ Commit.find(repo).foreach((c: Commit) => println(c.authorName))
 Commit.find(CommitFilter(limit = 10))(repo).foreach(println)
 
 // Print branch tip ids.
-Branch.find(repo).foreach((b: Branch) => println(b.tip().id))
+Branch.find(repo).foreach((b: Branch) => println(Branch.tip(b)(repo).id))
 
 // Print repository head.
 Repository.head(repo) match {
@@ -50,6 +50,12 @@ val commit = Tag.commit(tag)
 // Delete the tag we just created.
 Tag.delete(tag) // or just Tag.delete("something")
 ```
+
+## Contributing
+
+* Fork and clone the repository.
+* Run `sbt update`. If you use IntelliJ, you may run `sbt gen-idea` as well.
+* Sources at `src/main/scala/` and tests at `src/test/scala/`.
 
 ## License
 This library is licensed under MIT.
