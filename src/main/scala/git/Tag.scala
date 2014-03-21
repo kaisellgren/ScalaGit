@@ -37,7 +37,7 @@ case class Tag(
 object Tag {
   def commit(tag: Tag)(repository: Repository): Commit = ObjectDatabase.findObjectById(repository, tag.targetIdentifier) match {
     case Some(c: Commit) => c
-    case _ => throw new Exception(s"Could not find the commit the tag points to: ${tag.targetIdentifier}")
+    case _ => throw new CorruptRepositoryException(s"Could not find the commit the tag points to: ${tag.targetIdentifier}")
   }
 
   def find(filter: Option[TagFilter])(repository: Repository): Seq[Tag] = {
@@ -52,7 +52,7 @@ object Tag {
       ObjectDatabase.findObjectById(repository, tagRef) match {
         case Some(obj: Tag) => tagBuffer += obj
         case Some(obj: Commit) => tagBuffer += Tag.fromHashCode(ObjectId(FileUtil.readString(file).trim), repository = repository, name = file.getName)
-        case _ => throw new Exception(s"Could not find object '${tagRef.sha}', the target of the tag '${file.getName}'")
+        case _ => throw new CorruptRepositoryException(s"Could not find object '${tagRef.sha}', the target of the tag '${file.getName}'")
       }
     })
 
@@ -77,7 +77,7 @@ object Tag {
     val actualTargetId = targetId match {
       case Some(id: ObjectId) => id
       case None => Repository.head(repository) match {
-        case None => throw new Exception("Cannot create a tag without HEAD.")
+        case None => throw new NoHeadException("Cannot create a tag without HEAD.")
         case Some(branch: BaseBranch) => branch.tipId
       }
     }
@@ -106,7 +106,7 @@ object Tag {
   private[git] def fromObjectFile(bytes: Seq[Byte], repository: Repository, id: ObjectId, header: Option[ObjectHeader]): Tag = {
     val reader = new DataReader(bytes)
 
-    if (reader.takeString(7) != "object ") throw new Exception("Corrupted Tag object.")
+    if (reader.takeString(7) != "object ") throw new CorruptRepositoryException("Corrupted Tag object.")
 
     // Followed by tag hash.
     val targetIdentifier = reader.takeObjectId()
@@ -114,20 +114,20 @@ object Tag {
     reader >> 1 // LF.
 
     // Followed by the type.
-    if (reader.takeString(5) != "type ") throw new Exception("Corrupted Tag object.")
+    if (reader.takeString(5) != "type ") throw new CorruptRepositoryException("Corrupted Tag object.")
 
     val tagType = TagType.withName(reader.takeStringWhile(_ != '\n'))
 
     reader >> 1 // LF.
 
     // The tag type starts with "tag ", also skip.
-    if (reader.takeString(4) != "tag ") throw new Exception("Corrupted Tag object.")
+    if (reader.takeString(4) != "tag ") throw new CorruptRepositoryException("Corrupted Tag object.")
 
     val tagName = reader.takeStringWhile(_ != '\n')
 
     reader >> 1 // LF.
 
-    if (reader.takeString(7) != "tagger ") throw new Exception("Corrupted Tag object.")
+    if (reader.takeString(7) != "tagger ") throw new CorruptRepositoryException("Corrupted Tag object.")
 
     val tagger = parseUserFields(reader)
 

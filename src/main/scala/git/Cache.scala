@@ -19,9 +19,10 @@ package git
 import scala.concurrent.stm._
 
 case class Cache(
-  tags: Ref[Vector[Tag]] = Ref(Vector()),
-  branches: Ref[Vector[BaseBranch]] = Ref(Vector()),
-  references: Ref[Vector[Reference]] = Ref(Vector())
+  tags: Ref[Seq[Tag]] = Ref(Vector()),
+  branches: Ref[Seq[BaseBranch]] = Ref(Vector()),
+  references: Ref[Seq[Reference]] = Ref(Vector()),
+  packIndexes: Ref[Option[Seq[PackIndex]]] = Ref(None)
 )
 
 object Cache {
@@ -41,6 +42,15 @@ object Cache {
     clearTags(repository)
     clearBranches(repository)
     clearReferences(repository)
+  }
+
+  private[git] def getPackIndexes(repository: Repository) = atomic { implicit txn =>
+    repository.cache.packIndexes()
+  }
+
+  private[git] def setPackIndexes(repository: Repository, indexes: Seq[PackIndex]): Seq[PackIndex] = atomic { implicit txn =>
+    repository.cache.packIndexes() = Some(indexes)
+    indexes
   }
 
   private[git] def deleteTag(repository: Repository, name: String) = atomic { implicit txn =>

@@ -18,7 +18,6 @@ package git
 
 import java.io.File
 import git.util.FileUtil
-import scala.Some
 
 case class Repository(
   path: String,
@@ -27,19 +26,7 @@ case class Repository(
 )
 
 object Repository {
-  private[git] def head(repository: Repository): Option[BaseBranch] = {
-    val refs = Reference.find(repository)
-
-    refs.head match {
-      case None => None
-      case Some(head) => Branch.find(repository).find(_.tipId == head.targetIdentifier) match {
-        case Some(a: BaseBranch) => Some(a)
-        case _ => Some(DetachedHead(tipId = head.targetIdentifier))
-      }
-    }
-  }
-
-  private[git] def open(path: String): Repository = {
+  def open(path: String): Repository = {
     val workingCopyPath = path.replace(".git", "")
     val repositoryPath = workingCopyPath + "/.git"
 
@@ -51,9 +38,9 @@ object Repository {
     )
   }
 
-  private def isInitialized(path: String): Boolean = new File(path + "/HEAD").exists()
+  private[this] def isInitialized(path: String): Boolean = new File(path + "/HEAD").exists()
 
-  private def initializeRepository(path: String) {
+  private[this] def initializeRepository(path: String) {
     // If this repository does not exist (user wishes to create a new one), then set up the remaining files.
     if (!isInitialized(path)) {
       // Always ensure we have the basic folder structure.
@@ -71,6 +58,18 @@ object Repository {
 
       // TODO: Let's implement a Config class.
       FileUtil.createFileWithContents(s"$path/config", "[core]\n\trepositoryformatversion = 0\n\tfilemode = false\n\tbare = false\n\tlogallrefupdates = true\n\tsymlinks = false\n\tignorecase = true\n\thideDotFiles = dotGitOnly")
+    }
+  }
+
+  def head(repository: Repository): Option[BaseBranch] = {
+    val refs = Reference.find(repository)
+
+    refs.head match {
+      case None => None
+      case Some(head) => Branch.find(repository).find(_.tipId == head.targetIdentifier) match {
+        case Some(a: BaseBranch) => Some(a)
+        case _ => Some(DetachedHead(tipId = head.targetIdentifier))
+      }
     }
   }
 }

@@ -68,7 +68,7 @@ object PackFile {
       case PackFile.CommitBitFlag => Commit.fromObjectFile(objectBytes, id = id, repository = repository, header = None)
       case PackFile.TagBitFlag => Tag.fromObjectFile(objectBytes, id = id, repository = repository, header = None)
       case PackFile.TreeBitFlag => Tree.fromObjectFile(objectBytes, id = id, repository = repository, header = None)
-      case _ => throw new Exception(s"Could not parse object type: $typeFlag") // TODO: Deltas
+      case _ => throw new CorruptRepositoryException(s"Could not parse object type: $typeFlag") // TODO: Deltas
     }
   }
 }

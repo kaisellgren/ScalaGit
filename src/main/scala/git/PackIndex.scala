@@ -40,10 +40,10 @@ object PackIndex {
     val reader = new DataReader(bytes)
 
     // Confirm the header is correct.
-    if (reader.take(4).toArray.deep != Array(0xff, 0x74, 0x4f, 0x63).map(_.toByte).deep) throw new Exception("Index file header signature is corrupt.")
+    if (reader.take(4).toArray.deep != Array(0xff, 0x74, 0x4f, 0x63).map(_.toByte).deep) throw new CorruptRepositoryException("Index file header signature is corrupt.")
 
     // Confirm the version.
-    if (reader.take(4).toArray.deep != Array(0, 0, 0, 2).map(_.toByte).deep) throw new Exception("Older Pack Index file format is not supported.")
+    if (reader.take(4).toArray.deep != Array(0, 0, 0, 2).map(_.toByte).deep) throw new UnsupportedOperationException("Older Pack Index file format is not supported.")
 
     // Create the fan-out table.
     val fanOutBuffer = new ListBuffer[Int]
@@ -77,15 +77,20 @@ object PackIndex {
   }
 
   private[git] def findPackIndexes(repository: Repository): Seq[PackIndex] = {
-    val buffer = Vector.newBuilder[PackIndex]
+    Cache.getPackIndexes(repository) match {
+      case Some(indexes: Seq[PackIndex]) => indexes
+      case _ => {
+        val buffer = Vector.newBuilder[PackIndex]
 
-    new File(repository.path + "/objects/pack").listFiles.filter(_.getName.endsWith(".idx")).foreach((file: File) => {
-      val packName = file.getName.replace(".idx", ".pack")
-      val pack = PackFile(new File(repository.path + s"/objects/pack/$packName"))
+        new File(repository.path + "/objects/pack").listFiles.filter(_.getName.endsWith(".idx")).foreach((file: File) => {
+          val packName = file.getName.replace(".idx", ".pack")
+          val pack = PackFile(new File(repository.path + s"/objects/pack/$packName"))
 
-      buffer += PackIndex.fromPackIndexFile(FileUtil.readContents(file), pack)
-    })
+          buffer += PackIndex.fromPackIndexFile(FileUtil.readContents(file), pack)
+        })
 
-    buffer.result()
+        Cache.setPackIndexes(repository, buffer.result())
+      }
+    }
   }
 }

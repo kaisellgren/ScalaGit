@@ -34,14 +34,14 @@ object IndexFile {
   def fromBytes(bytes: Seq[Byte]) = {
     val reader = new DataReader(bytes)
 
-    if (reader.takeString(4) != "DIRC") throw new Exception("Corrupted Index file.")
+    if (reader.takeString(4) != "DIRC") throw new CorruptRepositoryException("Corrupted Index file.")
 
     val header = IndexFileHeader(
       version = Conversion.bytesToValue(reader.take(4)),
       entryCount = Conversion.bytesToValue(reader.take(4))
     )
 
-    if (header.version > 2) throw new Exception(s"Index file format version ${header.version} not supported.")
+    if (header.version > 2) throw new UnsupportedOperationException(s"Index file format version ${header.version} not supported.")
 
     /** Turns a two 4-byte lists into one `Date` object. */
     def createTime(seconds: Seq[Byte], nanoseconds: Seq[Byte]): Date = {

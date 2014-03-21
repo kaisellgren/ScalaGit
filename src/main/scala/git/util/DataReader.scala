@@ -39,7 +39,7 @@ class DataReader(data: Seq[Byte]) {
 
   /** Take data until the predicate is true. Moves forward. */
   def takeWhile(p: Byte => Boolean): Seq[Byte] = {
-    val buffer = new ListBuffer[Byte]
+    val buffer = Vector.newBuilder[Byte]
 
     @tailrec
     def iterate(acc: Int): Unit = {
@@ -52,9 +52,11 @@ class DataReader(data: Seq[Byte]) {
 
     iterate(0)
 
-    skip(buffer.length)
+    val r = buffer.result()
 
-    buffer.toList
+    skip(r.length)
+
+    r
   }
 
   /** Take data in form of a `String` until the predicate is true. Moves forward. */

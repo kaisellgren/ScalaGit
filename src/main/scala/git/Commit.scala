@@ -20,6 +20,8 @@ import java.util.Date
 import git.util.Parser._
 import git.util.DataReader
 import scala.collection.mutable.ListBuffer
+import com.sun.javaws.exceptions.InvalidArgumentException
+import scala.annotation.tailrec
 
 case class Commit(
   override val id: ObjectId,
@@ -37,40 +39,54 @@ case class Commit(
 
 object Commit {
   def find(filter: CommitFilter = CommitFilter())(repository: Repository): Seq[Commit] = {
-    val buffer = Set.newBuilder[Commit]
+    val buffer = Vector.newBuilder[Commit]
 
     // Prepare the "since" value.
     val sinceIds = filter.since match {
       // Defaults to HEAD.
       case None => Repository.head(repository) match {
-        case None => throw new Exception("No HEAD has been set and you queried for commits using HEAD as the 'since' value of the filter.")
+        case None => throw new NoHeadException("No HEAD has been set and you queried for commits using HEAD as the 'since' value of the filter.")
         case Some(head: BaseBranch) => List(Branch.tip(head)(repository).id)
       }
 
       case Some(list) => list.map{
         case id: ObjectId => id
         case b: Branch => Branch.tip(b)(repository).id
-        case _ => throw new Exception("Invalid commit filter: you passed an invalid object as part of 'since'.")
+        case _ => throw new InvalidArgumentException(Array("Invalid commit filter: you passed an invalid object as part of 'since'."))
       }
     }
 
+    // Helper that finds a commit or throws.
+    def findCommit(id: ObjectId): Commit = Commit.findById(id)(repository).getOrElse(throw CorruptRepositoryException(s"Could not find commit $id."))
+
+    // By most recent.
     if (filter.sort == CommitSortStrategy.Time) {
-      // Fill the buffer with commits from all "since" sources.
-      // TODO: Improve.
-      sinceIds.foreach((sinceId: ObjectId) => {
-        def findNSinceId(n: Int, id: ObjectId) {
-          ObjectDatabase.findObjectById(repository, id).get match { // TODO: Handle when this ends (None).
-            case commit: Commit => {
-              if (commit.id != null) buffer += commit
-              if (n > 1) commit.parentIds.foreach(findNSinceId(n -1, _))
-            }
+      @tailrec
+      def iterate(commits: Seq[Commit], acc: Int) {
+        if (commits.length != 0) {
+          val mostRecent = commits.maxBy(_.commitDate)
+
+          buffer += mostRecent
+
+          // Have we hit the limit?
+          if (acc + 1 < filter.limit) {
+            // Let's come up with a new set of commits. The next 'most recent'.
+            val nextCommits = Set.newBuilder[Commit]
+
+            // For most recent, add its parents.
+            nextCommits ++= mostRecent.parentIds.map(findCommit)
+
+            // Add every commit except the most recent.
+            nextCommits ++= commits.filter(_ != mostRecent)
+
+            iterate(nextCommits.result().toVector, acc + 1)
           }
         }
+      }
 
-        findNSinceId(filter.limit, sinceId)
-      })
+      iterate(sinceIds.map(findCommit), 0)
 
-      buffer.result().toVector.sortBy(_.commitDate).take(filter.limit)
+      buffer.result()
     } else {
       buffer.result().toVector
     }
@@ -78,12 +94,22 @@ object Commit {
 
   def find(repository: Repository): Seq[Commit] = find()(repository)
 
-  def tree(commit: Commit)(repository: Repository): Tree = ObjectDatabase.findObjectById(repository, commit.treeId) match {
-    case Some(o: Tree) => o
-    case _ => throw new Exception(s"Could not find the tree for the commit (${commit.id}).")
+  def findById(id: ObjectId)(repository: Repository): Option[Commit] = ObjectDatabase.findObjectById(repository, id) match {
+    case Some(c: Commit) => Some(c)
+    case _ => None
   }
 
-  def parents(): Seq[Commit] = ???
+  def tree(commit: Commit)(repository: Repository): Tree = ObjectDatabase.findObjectById(repository, commit.treeId) match {
+    case Some(o: Tree) => o
+    case _ => throw new CorruptRepositoryException(s"Could not find the tree for the commit (${commit.id}).")
+  }
+
+  def parents(commit: Commit)(repository: Repository): Seq[Commit] = commit.parentIds.map((id: ObjectId) => {
+    Commit.findById(id)(repository) match {
+      case Some(c: Commit) => c
+      case None => throw new CorruptRepositoryException(s"Could not find commit $id")
+    }
+  })
 
   def toObjectFile(commit: Commit): Seq[Byte] = {
     val buffer = new ListBuffer[Byte]
@@ -110,7 +136,7 @@ object Commit {
   def fromObjectFile(bytes: Seq[Byte], repository: Repository, id: ObjectId, header: Option[ObjectHeader]): Commit = {
     val reader = new DataReader(bytes)
 
-    if (reader.takeString(5) != "tree ") throw new Exception("Corrupted Commit object file.")
+    if (reader.takeString(5) != "tree ") throw new CorruptRepositoryException("Corrupted Commit object file.")
 
     // Followed by tree hash.
     val treeId = reader.takeStringBasedObjectId()
@@ -139,11 +165,11 @@ object Commit {
 
     reader << 6 // The parent ID parsing goes 6 bytes too far ("parent").
 
-    if (reader.takeString(7) != "author ") throw new Exception("Corrupted Commit object file.")
+    if (reader.takeString(7) != "author ") throw new CorruptRepositoryException("Corrupted Commit object file.")
 
     val author = parseUserFields(reader)
 
-    if (reader.takeString(10) != "committer ") throw new Exception("Corrupted Commit object file.")
+    if (reader.takeString(10) != "committer ") throw new CorruptRepositoryException("Corrupted Commit object file.")
 
     val committer = parseUserFields(reader)
 
