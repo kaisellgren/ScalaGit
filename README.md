@@ -8,7 +8,6 @@
 /==/\/ _ |\==\.       /==/-  /\ - \|==|- `-._/==/-  /\ - \      \==\-  ,    (|==|- |      |==|, |
 \==\ - , / `-.`.___.-'\==\ _.\=\.-'/==/ - , ,|==\ _.\=\.-'       /==/ _  ,  //==/. /      /==/ -/
  `--`---'              `--`        `--`-----' `--`               `--`------' `--`-`       `--`--`
-
 ```
 Scala Git
 ==
@@ -16,6 +15,8 @@ Scala Git
 A pure Scala implementation of the Git version control.
 
 *Note: this project is still a work-in-progress.*
+
+[![Build Status](https://drone.io/github.com/kaisellgren/ScalaGit/status.png)](https://drone.io/github.com/kaisellgren/ScalaGit/latest)
 
 ## Examples
 
