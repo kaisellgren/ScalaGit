@@ -3,5 +3,7 @@
 /out/
 target/
 src/test/resources/repositories/*
+src/test/scala/git/test.scala
 api.txt
 src/test/scala/test
+*.iml
