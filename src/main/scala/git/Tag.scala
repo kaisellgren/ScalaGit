@@ -35,7 +35,7 @@ case class Tag(
 ) extends Object
 
 object Tag {
-  def commit(tag: Tag)(repository: Repository): Commit = ObjectDatabase.findObjectById(repository, tag.targetIdentifier) match {
+  def commit(tag: Tag)(repository: Repository): Commit = ObjectDatabase.findObjectById(tag.targetIdentifier)(repository) match {
     case Some(c: Commit) => c
     case _ => throw new CorruptRepositoryException(s"Could not find the commit the tag points to: ${tag.targetIdentifier}")
   }
@@ -49,7 +49,7 @@ object Tag {
       // We read the value inside the tag file to see if it points to a tag, if so, we can add more info about it.
       val tagRef = ObjectId.fromPlain(FileUtil.readContents(file))
 
-      ObjectDatabase.findObjectById(repository, tagRef) match {
+      ObjectDatabase.findObjectById(tagRef)(repository) match {
         case Some(obj: Tag) => tagBuffer += obj
         case Some(obj: Commit) => tagBuffer += Tag.fromHashCode(ObjectId(FileUtil.readString(file).trim), repository = repository, name = file.getName)
         case _ => throw new CorruptRepositoryException(s"Could not find object '${tagRef.sha}', the target of the tag '${file.getName}'")

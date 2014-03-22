@@ -20,7 +20,6 @@ import java.util.Date
 import git.util.Parser._
 import git.util.DataReader
 import scala.collection.mutable.ListBuffer
-import com.sun.javaws.exceptions.InvalidArgumentException
 import scala.annotation.tailrec
 
 case class Commit(
@@ -52,7 +51,7 @@ object Commit {
       case Some(list) => list.map{
         case id: ObjectId => id
         case b: Branch => Branch.tip(b)(repository).id
-        case _ => throw new InvalidArgumentException(Array("Invalid commit filter: you passed an invalid object as part of 'since'."))
+        case _ => throw new Exception("Invalid commit filter: you passed an invalid object as part of 'since'.")
       }
     }
 
@@ -94,12 +93,12 @@ object Commit {
 
   def find(repository: Repository): Seq[Commit] = find()(repository)
 
-  def findById(id: ObjectId)(repository: Repository): Option[Commit] = ObjectDatabase.findObjectById(repository, id) match {
+  def findById(id: ObjectId)(repository: Repository): Option[Commit] = ObjectDatabase.findObjectById(id)(repository) match {
     case Some(c: Commit) => Some(c)
     case _ => None
   }
 
-  def tree(commit: Commit)(repository: Repository): Tree = ObjectDatabase.findObjectById(repository, commit.treeId) match {
+  def tree(commit: Commit)(repository: Repository): Tree = ObjectDatabase.findObjectById(commit.treeId)(repository) match {
     case Some(o: Tree) => o
     case _ => throw new CorruptRepositoryException(s"Could not find the tree for the commit (${commit.id}).")
   }

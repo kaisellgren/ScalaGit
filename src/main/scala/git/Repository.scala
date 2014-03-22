@@ -72,4 +72,11 @@ object Repository {
       }
     }
   }
+
+  def headAsCommit(repository: Repository): Option[Commit] = {
+    Repository.head(repository) match {
+      case None => None
+      case Some(branch) => Some(Branch.tip(branch)(repository))
+    }
+  }
 }

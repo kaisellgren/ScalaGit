@@ -26,7 +26,7 @@ object ObjectDatabase {
   /**
    * Finds one Git object from the object database by its identifier.
    */
-  private[git] def findObjectById(repository: Repository, id: ObjectId): Option[Object] = {
+  private[git] def findObjectById(id: ObjectId)(repository: Repository): Option[Object] = {
     // Try to look into the object files first.
     val file = new File(s"${repository.path}/objects/${id.sha.take(2)}/${id.sha.substring(2)}")
 

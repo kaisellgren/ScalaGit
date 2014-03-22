@@ -62,7 +62,7 @@ object Branch {
     buffer.result()
   }
 
-  def tip(branch: BaseBranch)(repository: Repository): Commit = ObjectDatabase.findObjectById(repository, branch.tipId) match {
+  def tip(branch: BaseBranch)(repository: Repository): Commit = ObjectDatabase.findObjectById(branch.tipId)(repository) match {
     case Some(o: Commit) => o
     case _ => throw new CorruptRepositoryException(s"Could not find the commit the branch ${branch.name} points to.")
   }
