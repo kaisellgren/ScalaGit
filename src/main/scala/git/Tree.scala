@@ -58,4 +58,9 @@ object Tree {
   }
 
   def toObjectFile(tree: Tree) = ???
+
+  def findById(id: ObjectId)(repository: Repository): Option[Tree] = ObjectDatabase.findObjectById(id)(repository) match {
+    case Some(tree: Tree) => Some(tree)
+    case _ => None
+  }
 }

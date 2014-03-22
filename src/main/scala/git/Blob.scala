@@ -20,7 +20,7 @@ case class Blob(
   override val id: ObjectId,
   override val header: ObjectHeader,
   size: Int = 0,
-  contents: Seq[Byte] // TODO: We have to make sure we don't unnecessarily create blobs and consume memory.
+  contents: Seq[Byte]
 ) extends Object
 
 object Blob {
@@ -35,4 +35,9 @@ object Blob {
   )
 
   def toObjectFile(blob: Blob) = ???
+
+  def findById(id: ObjectId)(repository: Repository): Option[Blob] = ObjectDatabase.findObjectById(id)(repository) match {
+    case Some(blob: Blob) => Some(blob)
+    case _ => None
+  }
 }
