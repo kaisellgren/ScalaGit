@@ -31,7 +31,7 @@ object PackFile {
   val ReservedBitFlag = 5
   val OffsetDelta = 6
 
-  def loadObject(repository: Repository, pack: PackFile, offset: Int, id: ObjectId): Object = {
+  def findById(repository: Repository, pack: PackFile, offset: Int, id: ObjectId): Object = {
     val raf = new RandomAccessFile(pack.file, "r")
     raf.seek(offset)
 
@@ -64,10 +64,10 @@ object PackFile {
     val objectBytes = Compressor.decompressData(deflatedBytes.toList)
 
     typeFlag match {
-      case PackFile.BlobBitFlag => Blob.fromObjectFile(objectBytes, id = id, repository = repository, header = None)
-      case PackFile.CommitBitFlag => Commit.fromObjectFile(objectBytes, id = id, repository = repository, header = None)
-      case PackFile.TagBitFlag => Tag.fromObjectFile(objectBytes, id = id, repository = repository, header = None)
-      case PackFile.TreeBitFlag => Tree.fromObjectFile(objectBytes, id = id, repository = repository, header = None)
+      case PackFile.BlobBitFlag => Blob.decode(objectBytes, id = id, repository = repository, header = None)
+      case PackFile.CommitBitFlag => Commit.decode(objectBytes, id = id, repository = repository, header = None)
+      case PackFile.TagBitFlag => Tag.decode(objectBytes, id = id, repository = repository, header = None)
+      case PackFile.TreeBitFlag => Tree.decode(objectBytes, id = id, repository = repository, header = None)
       case _ => throw new CorruptRepositoryException(s"Could not parse object type: $typeFlag") // TODO: Deltas
     }
   }

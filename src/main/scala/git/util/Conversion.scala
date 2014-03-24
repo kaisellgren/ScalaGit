@@ -14,23 +14,44 @@
  * limitations under the License.
  */
 
-package git
-package util
+package git.util
 
-import java.math.BigInteger
+import java.nio.ByteBuffer
+import javax.xml.bind.DatatypeConverter
 
 object Conversion {
   val hexArray = "0123456789abcdef".toCharArray
 
   /** Converts a sequence of bytes to an integer value. */
-  def bytesToValue(bytes: Seq[Byte]): Int = new BigInteger(1, bytes.toList).intValue
+  def bytesToInt(bytes: Seq[Byte]): Int = {
+    bytes.length match {
+      case 0 => 0
+      case 1 => bytes(0)
+      case 2 => ByteBuffer.wrap(bytes.toArray[Byte]).getShort
+      case 4 => ByteBuffer.wrap(bytes.toArray[Byte]).getInt
+      case _ => throw new Exception(s"Cannot convert ${bytes.length} amount of bytes into an integer value.")
+    }
+  }
+
+  /** Converts an integer to a sequence of bytes. */
+  def intToBytes(value: Int): Seq[Byte] = {
+    val buffer = new Array[Byte](4)
+
+    for (i <- 0 until 4) {
+      val offset = (buffer.length - 1 - i) * 8
+      buffer(i) = ((value >>> offset) & 0xff).toByte
+    }
+
+    buffer
+  }
 
   /** Converts bytes into a hex string. */
   def bytesToHexString(bytes: Seq[Byte]): String = {
-    // This method is optimized for performance.
+    // This is slightly faster than DatatypeConverter.printHexBinary().
+
     val hexChars = new Array[Char](bytes.length * 2)
 
-    for (i: Int <- 0 until bytes.length) {
+    for (i <- 0 until bytes.length) {
       val value = bytes(i) & 0xff
       hexChars(i * 2) = hexArray(value >>> 4)
       hexChars(i * 2 + 1) = hexArray(value & 0x0f)
@@ -38,4 +59,7 @@ object Conversion {
 
     new String(hexChars)
   }
+
+  /** Converts a hex string into a byte sequence. */
+  def hexStringToBytes(hex: String): Seq[Byte] = DatatypeConverter.parseHexBinary(hex)
 }

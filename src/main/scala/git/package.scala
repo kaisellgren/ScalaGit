@@ -16,8 +16,9 @@
 
 package object git {
   implicit def listByte2ArrayByte(array: List[Byte]): Array[Byte] = array.toArray
-  implicit def objectToBytes(o: Object): Seq[Byte] = Object.toObjectFile(o)
-  implicit def objectHeaderToBytes(o: ObjectHeader): Seq[Byte] = ObjectHeader.toObjectFile(o)
+  implicit def objectToBytes(o: Object): Seq[Byte] = Object.encode(o)
+  implicit def objectIdToBytes(o: ObjectId): Seq[Byte] = ObjectId.encode(o)
+  implicit def objectHeaderToBytes(o: ObjectHeader): Seq[Byte] = ObjectHeader.encode(o)
 
   private[git] def warning(message: String): Unit = System.err.println("[warning] " + message)
 }

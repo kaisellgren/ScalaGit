@@ -29,11 +29,11 @@ trait Object {
 }
 
 object Object {
-  def toObjectFile(o: Object): Seq[Byte] = o match {
-    case o: Commit => Commit.toObjectFile(o)
-    case o: Tag => Tag.toObjectFile(o)
-    case o: Blob => Blob.toObjectFile(o)
-    case o: Tree => Tree.toObjectFile(o)
+  def encode(o: Object): Seq[Byte] = o match {
+    case o: Commit => Commit.encode(o)
+    case o: Tag => Tag.encode(o)
+    case o: Blob => Blob.encode(o)
+    case o: Tree => Tree.encode(o)
     //case o: Note => Note.toObjectFile(o)
   }
 }

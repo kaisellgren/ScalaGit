@@ -24,7 +24,7 @@ case class Blob(
 ) extends Object
 
 object Blob {
-  def fromObjectFile(bytes: Seq[Byte], id: ObjectId, repository: Repository, header: Option[ObjectHeader]): Blob = Blob(
+  def decode(bytes: Seq[Byte], id: ObjectId, repository: Repository, header: Option[ObjectHeader]): Blob = Blob(
     id = id,
     header = header match {
       case Some(v) => v
@@ -34,7 +34,7 @@ object Blob {
     contents = bytes
   )
 
-  def toObjectFile(blob: Blob) = ???
+  def encode(blob: Blob) = ???
 
   def findById(id: ObjectId)(repository: Repository): Option[Blob] = ObjectDatabase.findObjectById(id)(repository) match {
     case Some(blob: Blob) => Some(blob)

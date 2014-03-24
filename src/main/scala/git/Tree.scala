@@ -28,7 +28,7 @@ case class Tree(
 ) extends Object
 
 object Tree {
-  def fromObjectFile(bytes: Seq[Byte], repository: Repository, id: ObjectId, header: Option[ObjectHeader]): Tree = {
+  private[git] def decode(bytes: Seq[Byte], repository: Repository, id: ObjectId, header: Option[ObjectHeader]): Tree = {
     val reader = new DataReader(bytes)
 
     val entryBuilder = new ListBuffer[TreeEntry]
@@ -57,7 +57,7 @@ object Tree {
     )
   }
 
-  def toObjectFile(tree: Tree) = ???
+  private[git] def encode(tree: Tree) = ???
 
   def findById(id: ObjectId)(repository: Repository): Option[Tree] = ObjectDatabase.findObjectById(id)(repository) match {
     case Some(tree: Tree) => Some(tree)

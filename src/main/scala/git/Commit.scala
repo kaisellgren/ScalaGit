@@ -110,21 +110,21 @@ object Commit {
     }
   })
 
-  def toObjectFile(commit: Commit): Seq[Byte] = {
+  def encode(commit: Commit): Seq[Byte] = {
     val buffer = new ListBuffer[Byte]
 
     // TODO: Where do we create the ID?
 
-    buffer.appendAll(s"tree ${commit.treeId.sha}\n".getBytes)
+    buffer.appendAll(s"tree ${commit.treeId.sha}\n".getBytes("US-ASCII"))
 
     commit.parentIds.foreach(id => {
-      buffer.appendAll(s"parent ${id.sha}\n".getBytes)
+      buffer.appendAll(s"parent ${id.sha}\n".getBytes("US-ASCII"))
     })
 
-    buffer.appendAll(s"author ${commit.authorName} <${commit.authorEmail}> ${dateToGitFormat(commit.authorDate)}\n".getBytes)
-    buffer.appendAll(s"committer ${commit.committerName} <${commit.committerEmail}> ${dateToGitFormat(commit.commitDate)}\n".getBytes)
+    buffer.appendAll(s"author ${commit.authorName} <${commit.authorEmail}> ${dateToGitFormat(commit.authorDate)}\n".getBytes("US-ASCII"))
+    buffer.appendAll(s"committer ${commit.committerName} <${commit.committerEmail}> ${dateToGitFormat(commit.commitDate)}\n".getBytes("US-ASCII"))
 
-    buffer.appendAll(s"\n${commit.message}".getBytes)
+    buffer.appendAll(s"\n${commit.message}".getBytes("US-ASCII"))
 
     // Insert the header in the beginning.
     buffer.insertAll(0, ObjectHeader(typ = ObjectType.Commit, length = buffer.length))
@@ -132,7 +132,7 @@ object Commit {
     buffer.toList
   }
 
-  def fromObjectFile(bytes: Seq[Byte], repository: Repository, id: ObjectId, header: Option[ObjectHeader]): Commit = {
+  def decode(bytes: Seq[Byte], repository: Repository, id: ObjectId, header: Option[ObjectHeader]): Commit = {
     val reader = new DataReader(bytes)
 
     if (reader.takeString(5) != "tree ") throw new CorruptRepositoryException("Corrupted Commit object file.")

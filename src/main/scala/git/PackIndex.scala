@@ -36,7 +36,7 @@ case class PackIndex(
 }
 
 object PackIndex {
-  def fromPackIndexFile(bytes: Seq[Byte], packFile: PackFile): PackIndex = {
+  def decode(bytes: Seq[Byte], packFile: PackFile): PackIndex = {
     val reader = new DataReader(bytes)
 
     // Confirm the header is correct.
@@ -48,7 +48,7 @@ object PackIndex {
     // Create the fan-out table.
     val fanOutBuffer = new ListBuffer[Int]
 
-    for (i <- 0 to 255) fanOutBuffer += Conversion.bytesToValue(reader.take(4))
+    for (i <- 0 to 255) fanOutBuffer += Conversion.bytesToInt(reader.take(4))
 
     val fanOutTable = fanOutBuffer.toList
 
@@ -69,7 +69,7 @@ object PackIndex {
     val offsetBuffer = new ListBuffer[Int]
 
     // TODO: Implement support for very large offsets (>4 GB pack files).
-    for (i <- 0 until length) offsetBuffer += Conversion.bytesToValue(reader.take(4))
+    for (i <- 0 until length) offsetBuffer += Conversion.bytesToInt(reader.take(4))
 
     val offsets = offsetBuffer.toList
 
@@ -86,7 +86,7 @@ object PackIndex {
           val packName = file.getName.replace(".idx", ".pack")
           val pack = PackFile(new File(repository.path + s"/objects/pack/$packName"))
 
-          buffer += PackIndex.fromPackIndexFile(FileUtil.readContents(file), pack)
+          buffer += PackIndex.decode(FileUtil.readContents(file), pack)
         })
 
         Cache.setPackIndexes(repository, buffer.result())

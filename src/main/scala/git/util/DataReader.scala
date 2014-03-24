@@ -25,6 +25,8 @@ case object Take
 
 /** A simple data reader utility for Scala Git data parsing and manipulation purposes. */
 class DataReader(data: Seq[Byte]) {
+  // TODO: Let's make this thread-safe.
+
   private[this] val _position = Ref(0)
 
   def position = atomic { implicit txn =>

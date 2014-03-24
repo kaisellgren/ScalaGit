@@ -39,16 +39,16 @@ object ObjectDatabase {
       val bytes = Compressor.decompressData(FileUtil.readContents(file))
 
       // Construct our header.
-      val header = ObjectHeader.fromObjectFile(bytes)
+      val header = ObjectHeader.decode(bytes)
 
       // The actual object contents without the header data.
       val objectFileData = bytes.takeRight(header.length)
 
       Some(header.typ match {
-        case ObjectType.Commit => Commit.fromObjectFile(objectFileData, id = id, repository = repository, header = Some(header))
-        case ObjectType.Tree => Tree.fromObjectFile(objectFileData, id = id, repository = repository, header = Some(header))
-        case ObjectType.Blob => Blob.fromObjectFile(objectFileData, id = id, repository = repository, header = Some(header))
-        case ObjectType.Tag => Tag.fromObjectFile(objectFileData, id = id, repository = repository, header = Some(header))
+        case ObjectType.Commit => Commit.decode(objectFileData, id = id, repository = repository, header = Some(header))
+        case ObjectType.Tree => Tree.decode(objectFileData, id = id, repository = repository, header = Some(header))
+        case ObjectType.Blob => Blob.decode(objectFileData, id = id, repository = repository, header = Some(header))
+        case ObjectType.Tag => Tag.decode(objectFileData, id = id, repository = repository, header = Some(header))
         case _ => throw new NotImplementedError(s"Object type '${header.typ}' is not implemented!")
       })
     } else {
@@ -57,7 +57,7 @@ object ObjectDatabase {
       def find(indexes: Seq[PackIndex]): Option[Object] = {
         if (indexes.length == 0) None
         else indexes.head.findOffset(id) match {
-          case Some(offset: Int) => Some(PackFile.loadObject(repository, indexes.head.packFile, offset, id))
+          case Some(offset: Int) => Some(PackFile.findById(repository, indexes.head.packFile, offset, id))
           case _ => find(indexes.tail)
         }
       }

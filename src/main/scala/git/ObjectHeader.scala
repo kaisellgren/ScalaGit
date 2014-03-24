@@ -22,17 +22,17 @@ import scala.collection.mutable.ListBuffer
 case class ObjectHeader(typ: ObjectType, length: Int = 0)
 
 object ObjectHeader {
-  def toObjectFile(header: ObjectHeader): Seq[Byte] = {
+  def encode(header: ObjectHeader): Seq[Byte] = {
     val buffer = new ListBuffer[Byte]
 
-    buffer.appendAll(s"${header.typ} ".getBytes)
-    buffer.appendAll(s"${header.length}".getBytes)
+    buffer.appendAll(s"${header.typ} ".getBytes("US-ASCII"))
+    buffer.appendAll(s"${header.length}".getBytes("US-ASCII"))
     buffer.append(0)
 
     buffer.toList
   }
 
-  def fromObjectFile(bytes: Seq[Byte]): ObjectHeader = {
+  def decode(bytes: Seq[Byte]): ObjectHeader = {
     // Figure out the object type. Read until we hit a space.
     val typeData = bytes.takeWhile(_ != 32)
     val t = ObjectType.withName(new String(typeData.toList))

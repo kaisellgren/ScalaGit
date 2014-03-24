@@ -35,4 +35,6 @@ object ObjectId {
 
   /** Constructs ObjectId from plain byte sha. It strips the whitespace from the end if any. */
   def fromPlain(bytes: Seq[Byte]) = ObjectId(new String(bytes.take(40).toList))
+
+  def encode(id: ObjectId): Seq[Byte] = Conversion.hexStringToBytes(id.sha)
 }

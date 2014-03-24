@@ -21,7 +21,7 @@ import git.util.{PathUtil}
 import java.io.File
 import scala.annotation.tailrec
 
-case class Ignore(entries: List[String], root: File) {
+case class Ignore(entries: Seq[String], root: File) {
   //@tailrec TODO: tailrec
   def isIgnored(file: File): Boolean = {
     if (file.getPath == ".gitignore") true
@@ -41,7 +41,9 @@ case class Ignore(entries: List[String], root: File) {
 
 object Ignore {
   def fromPath(wcPath: String): Ignore = {
-    Ignore(entries = Source.fromFile(s"$wcPath/.gitignore").getLines().toList, root = new File(wcPath))
+    val file = new File(s"$wcPath/.gitignore")
+    if (!file.exists()) Ignore(entries = Seq(), root = new File(wcPath))
+    else Ignore(entries = Source.fromFile(file).getLines().toVector, root = new File(wcPath))
   }
 
   private def regexFromGlob(glob: String) = {

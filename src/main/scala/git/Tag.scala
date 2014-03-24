@@ -86,7 +86,7 @@ object Tag {
 
     if (file.exists()) throw new Exception(s"Cannot create tag '$name' because it already exists.")
 
-    FileUtil.writeToFile(file, actualTargetId.sha.getBytes.toList)
+    FileUtil.writeToFile(file, actualTargetId.sha.getBytes("US-ASCII"))
 
     Tag(
       id = ObjectId(sha = ""),
@@ -101,9 +101,9 @@ object Tag {
     )
   }
 
-  def toObjectFile(tag: Tag) = ???
+  private[git] def encode(tag: Tag) = ???
 
-  private[git] def fromObjectFile(bytes: Seq[Byte], repository: Repository, id: ObjectId, header: Option[ObjectHeader]): Tag = {
+  private[git] def decode(bytes: Seq[Byte], repository: Repository, id: ObjectId, header: Option[ObjectHeader]): Tag = {
     val reader = new DataReader(bytes)
 
     if (reader.takeString(7) != "object ") throw new CorruptRepositoryException("Corrupted Tag object.")

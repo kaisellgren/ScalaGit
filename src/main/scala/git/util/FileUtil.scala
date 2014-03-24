@@ -18,6 +18,21 @@ package git
 package util
 
 import java.io.{BufferedInputStream, File, FileInputStream, FileOutputStream}
+import java.nio.file.{FileSystems, Files}
+import java.nio.file.attribute.FileTime
+
+case class FileStat(
+  ctime: Int,
+  ctimeFractions: Int,
+  mtime: Int,
+  mtimeFractions: Int,
+  device: Int,
+  inode: Int,
+  mode: Int,
+  uid: Int,
+  gid: Int,
+  size: Int
+)
 
 object FileUtil {
   def readString(file: File): String = new String(readContents(file).toArray)
@@ -50,5 +65,34 @@ object FileUtil {
     val these = file.listFiles.filterNot((f) => ignoreDirectories.contains(f))
 
     these ++ these.filter(_.isDirectory).flatMap((f: File) => recursiveListFiles(f, ignoreDirectories = ignoreDirectories))
+  }
+
+  /** Implementation of Unix stat(2). */
+  def stat(file: File): FileStat = {
+    val isUnix = Files.getFileStore(file.toPath).supportsFileAttributeView("unix")
+
+    val (ctimeSeconds, ctimeFractions) = {
+      if (isUnix) {
+        val ctime = Files.getAttribute(file.toPath, "unix:ctime").asInstanceOf[FileTime].toMillis
+        val ctimeSeconds = math.floor(ctime / 1000).toInt
+        val ctimeFractions = (ctime - ctimeSeconds).toInt
+
+        (ctimeSeconds, ctimeFractions)
+      } else (0, 0)
+    }
+
+    val mtime = Files.getAttribute(file.toPath, "basic:lastModifiedTime").asInstanceOf[FileTime].toMillis
+    val mtimeSeconds = math.floor(mtime / 1000).toInt
+    val mtimeFractions = (mtime - mtimeSeconds).toInt
+
+    val device = if (isUnix) Files.getAttribute(file.toPath, "unix:dev").asInstanceOf[Int] else 0
+    val inode = if (isUnix) Files.getAttribute(file.toPath, "unix:ino").asInstanceOf[Int] else 0
+    val mode = if (isUnix) Files.getAttribute(file.toPath, "unix:mode").asInstanceOf[Int] else 0
+    val uid = if (isUnix) Files.getAttribute(file.toPath, "unix:uid").asInstanceOf[Int] else 0
+    val gid = if (isUnix) Files.getAttribute(file.toPath, "unix:gid").asInstanceOf[Int] else 0
+
+    val size = Files.getAttribute(file.toPath, "basic:size").asInstanceOf[Long].toInt
+
+    FileStat(ctimeSeconds, ctimeFractions, mtimeSeconds, mtimeFractions, device, inode, mode, uid, gid, size)
   }
 }
