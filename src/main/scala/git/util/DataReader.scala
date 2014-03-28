@@ -25,13 +25,7 @@ case object Take
 
 /** A simple data reader utility for Scala Git data parsing and manipulation purposes. */
 class DataReader(data: Seq[Byte]) {
-  // TODO: Let's make this thread-safe.
-
   private[this] val _position = Ref(0)
-
-  def position = atomic { implicit txn =>
-    _position()
-  }
 
   /** Take `length` amount of bytes and move forward. */
   def take(length: Int): Seq[Byte] = {
@@ -87,6 +81,14 @@ class DataReader(data: Seq[Byte]) {
     _position() = _position() + length
   }
 
+  /** Returns the current internal position. */
+  def position = atomic { implicit txn =>
+    _position()
+  }
+
+  /** Moves the internal position forward. */
   def >>(length: Int) = skip(length)
+
+  /** Moves the internal position backward. */
   def <<(length: Int) = skip(-length)
 }

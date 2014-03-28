@@ -28,10 +28,10 @@ case class Tree(
 ) extends Object
 
 object Tree {
-  private[git] def decode(bytes: Seq[Byte], repository: Repository, id: ObjectId, header: Option[ObjectHeader]): Tree = {
+  private[git] def decode(bytes: Seq[Byte], id: Option[ObjectId] = None, header: Option[ObjectHeader] = None): Tree = {
     val reader = new DataReader(bytes)
 
-    val entryBuilder = new ListBuffer[TreeEntry]
+    val entryBuilder = Vector.newBuilder[TreeEntry]
 
     def parseEntry() {
       val mode = reader.takeStringWhile(_ != ' ').toInt
@@ -47,17 +47,33 @@ object Tree {
 
     parseEntry()
 
-    Tree(
-      entries = entryBuilder.toList,
+    val tree = Tree(
+      entries = entryBuilder.result(),
       header = header match {
         case Some(v) => v
-        case None => ObjectHeader(ObjectType.Tree)
+        case None => ObjectHeader(ObjectType.Tree, length = bytes.length)
       },
-      id = id
+      id = id match {
+        case Some(v) => v
+        case None => ObjectId("")
+      }
     )
+
+    if (id.isDefined) tree
+    else tree.copy(id = ObjectId.fromBytes(ObjectDatabase.hashObject(Tree.encode(tree))))
   }
 
-  private[git] def encode(tree: Tree) = ???
+  private[git] def encode(tree: Tree) = {
+    val builder = Vector.newBuilder[Byte]
+
+    builder ++= tree.header
+
+    tree.entries.foreach((entry) => {
+      builder ++= s"${entry.mode} ${entry.name}\0".getBytes("US-ASCII") ++ entry.id
+    })
+
+    builder.result()
+  }
 
   def findById(id: ObjectId)(repository: Repository): Option[Tree] = ObjectDatabase.findObjectById(id)(repository) match {
     case Some(tree: Tree) => Some(tree)

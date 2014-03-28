@@ -45,11 +45,12 @@ object Index {
     val fullPath = PathUtil.combine(repository.wcPath, path)
 
     val status = Index.status(repository)
-
-    val updatedStatus = status.copy(entries = status.entries.map((entry) => {
+    val newEntries = status.entries.map((entry) => {
       if (entry.name == fullPath) entry.copy(status = FileStatus.Staged) // TODO: Removed?
       else entry
-    }))
+    }).filter((entry) => FileStatus.isInStagingArea(entry.status))
+
+    val updatedStatus = status.copy(entries = newEntries)
 
     Index.save(updatedStatus)(repository)
   }
@@ -87,7 +88,7 @@ object Index {
         case None => IndexEntry(
           name = file.getPath,
           stageLevel = StageLevel.Ours,
-          id = ObjectId(""),
+          id = ObjectId.fromBytes(ObjectDatabase.hashObject(FileUtil.readContents(file))),
           status = if (ignore.isIgnored(file)) FileStatus.Ignored else FileStatus.Untracked
         )
       }
@@ -205,6 +206,10 @@ object Index {
       builder ++= Conversion.intToBytes(stat.size)
 
       builder ++= entry.id
+
+      val assumeValid = 0
+      val extendedFlag = 0
+      val stage = 0
 
       builder ++= Seq(0, 0) // TODO: Flags.
 

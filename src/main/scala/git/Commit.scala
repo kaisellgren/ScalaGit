@@ -111,28 +111,25 @@ object Commit {
   })
 
   def encode(commit: Commit): Seq[Byte] = {
-    val buffer = new ListBuffer[Byte]
+    val buffer = Vector.newBuilder[Byte]
 
-    // TODO: Where do we create the ID?
+    buffer ++= commit.header
 
-    buffer.appendAll(s"tree ${commit.treeId.sha}\n".getBytes("US-ASCII"))
+    buffer ++= s"tree ${commit.treeId.sha}\n".getBytes("US-ASCII")
 
     commit.parentIds.foreach(id => {
-      buffer.appendAll(s"parent ${id.sha}\n".getBytes("US-ASCII"))
+      buffer ++= s"parent ${id.sha}\n".getBytes("US-ASCII")
     })
 
-    buffer.appendAll(s"author ${commit.authorName} <${commit.authorEmail}> ${dateToGitFormat(commit.authorDate)}\n".getBytes("US-ASCII"))
-    buffer.appendAll(s"committer ${commit.committerName} <${commit.committerEmail}> ${dateToGitFormat(commit.commitDate)}\n".getBytes("US-ASCII"))
+    buffer ++= s"author ${commit.authorName} <${commit.authorEmail}> ${dateToGitFormat(commit.authorDate)}\n".getBytes("US-ASCII")
+    buffer ++= s"committer ${commit.committerName} <${commit.committerEmail}> ${dateToGitFormat(commit.commitDate)}\n".getBytes("US-ASCII")
 
-    buffer.appendAll(s"\n${commit.message}".getBytes("US-ASCII"))
+    buffer ++= s"\n${commit.message}".getBytes("US-ASCII")
 
-    // Insert the header in the beginning.
-    buffer.insertAll(0, ObjectHeader(typ = ObjectType.Commit, length = buffer.length))
-
-    buffer.toList
+    buffer.result()
   }
 
-  def decode(bytes: Seq[Byte], repository: Repository, id: ObjectId, header: Option[ObjectHeader]): Commit = {
+  def decode(bytes: Seq[Byte], id: Option[ObjectId] = None): Commit = {
     val reader = new DataReader(bytes)
 
     if (reader.takeString(5) != "tree ") throw new CorruptRepositoryException("Corrupted Commit object file.")
@@ -175,12 +172,12 @@ object Commit {
     // Finally the commit message.
     val message = new String(reader.getRest.toList).trim
 
-    Commit(
-      id = id,
-      header = header match {
+    val commit = Commit(
+      id = id match {
         case Some(v) => v
-        case None => ObjectHeader(ObjectType.Commit)
+        case None => ObjectId("")
       },
+      header = ObjectHeader(ObjectType.Commit, length = bytes.length),
       authorName = author.name,
       authorEmail = author.email,
       authorDate = author.date,
@@ -191,5 +188,8 @@ object Commit {
       treeId = treeId,
       parentIds = parentIds
     )
+
+    if (id.isDefined) commit
+    else commit.copy(id = ObjectId.fromBytes(ObjectDatabase.hashObject(Commit.encode(commit))))
   }
 }

@@ -64,10 +64,10 @@ object PackFile {
     val objectBytes = Compressor.decompressData(deflatedBytes.toList)
 
     typeFlag match {
-      case PackFile.BlobBitFlag => Blob.decode(objectBytes, id = id, repository = repository, header = None)
-      case PackFile.CommitBitFlag => Commit.decode(objectBytes, id = id, repository = repository, header = None)
-      case PackFile.TagBitFlag => Tag.decode(objectBytes, id = id, repository = repository, header = None)
-      case PackFile.TreeBitFlag => Tree.decode(objectBytes, id = id, repository = repository, header = None)
+      case PackFile.BlobBitFlag => Blob.decode(objectBytes, id = Some(id))
+      case PackFile.CommitBitFlag => Commit.decode(objectBytes, id = Some(id))
+      case PackFile.TagBitFlag => Tag.decode(objectBytes, id = Some(id))
+      case PackFile.TreeBitFlag => Tree.decode(objectBytes, id = Some(id))
       case _ => throw new CorruptRepositoryException(s"Could not parse object type: $typeFlag") // TODO: Deltas
     }
   }

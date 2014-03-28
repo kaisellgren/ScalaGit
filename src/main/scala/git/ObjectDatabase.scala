@@ -19,9 +19,13 @@ package git
 import java.io.File
 import git.util.{Compressor, FileUtil}
 import scala.annotation.tailrec
+import java.security.MessageDigest
 
 object ObjectDatabase {
-  def hashObject(bytes: List[Byte]) = ???
+  def hashObject(bytes: Seq[Byte]): ObjectId = {
+    val digest = MessageDigest.getInstance("SHA-1")
+    ObjectId.fromBytes(digest.digest(bytes.toArray))
+  }
 
   /**
    * Finds one Git object from the object database by its identifier.
@@ -45,10 +49,10 @@ object ObjectDatabase {
       val objectFileData = bytes.takeRight(header.length)
 
       Some(header.typ match {
-        case ObjectType.Commit => Commit.decode(objectFileData, id = id, repository = repository, header = Some(header))
-        case ObjectType.Tree => Tree.decode(objectFileData, id = id, repository = repository, header = Some(header))
-        case ObjectType.Blob => Blob.decode(objectFileData, id = id, repository = repository, header = Some(header))
-        case ObjectType.Tag => Tag.decode(objectFileData, id = id, repository = repository, header = Some(header))
+        case ObjectType.Commit => Commit.decode(objectFileData, id = Some(id))
+        case ObjectType.Tree => Tree.decode(objectFileData, id = Some(id))
+        case ObjectType.Blob => Blob.decode(objectFileData, id = Some(id))
+        case ObjectType.Tag => Tag.decode(objectFileData, id = Some(id))
         case _ => throw new NotImplementedError(s"Object type '${header.typ}' is not implemented!")
       })
     } else {

@@ -18,7 +18,7 @@ package git
 
 import git.util.Conversion
 
-case class ObjectId(sha: String) {
+case class ObjectId(sha: String, bytes: Option[Seq[Byte]] = None) {
   override def equals(o: Any) = o match {
     case that: ObjectId => that.sha == sha
     case _ => false
@@ -31,10 +31,16 @@ object ObjectId {
   val RawSize = 20
   val HexSize = 40
 
-  def fromBytes(bytes: Seq[Byte]) = ObjectId(Conversion.bytesToHexString(bytes))
+  def fromBytes(bytes: Seq[Byte]) = ObjectId(Conversion.bytesToHexString(bytes), bytes = Some(bytes))
 
   /** Constructs ObjectId from plain byte sha. It strips the whitespace from the end if any. */
-  def fromPlain(bytes: Seq[Byte]) = ObjectId(new String(bytes.take(40).toList))
+  def fromPlain(bytes: Seq[Byte]) = {
+    val data = bytes.take(40).toList
+    ObjectId(new String(data), bytes = Some(data))
+  }
 
-  def encode(id: ObjectId): Seq[Byte] = Conversion.hexStringToBytes(id.sha)
+  def encode(id: ObjectId): Seq[Byte] = id.bytes match {
+    case Some(data) => data
+    case _ => Conversion.hexStringToBytes(id.sha)
+  }
 }

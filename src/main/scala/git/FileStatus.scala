@@ -40,4 +40,6 @@ object FileStatus {
   def isModified(s: Int): Boolean = (s & Modified) != 0
   def isMissing(s: Int): Boolean = (s & Missing) != 0
   def isIgnored(s: Int): Boolean = (s & Ignored) != 0
+
+  def isInStagingArea(s: Int) = isStaged(s) || isRenamed(s) || isDeleted(s) || isModified(s)
 }

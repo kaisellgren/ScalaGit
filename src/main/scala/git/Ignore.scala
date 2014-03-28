@@ -24,18 +24,15 @@ import scala.annotation.tailrec
 case class Ignore(entries: Seq[String], root: File) {
   //@tailrec TODO: tailrec
   def isIgnored(file: File): Boolean = {
-    if (file.getPath == ".gitignore") true
-    else {
-      val ignored = entries.exists(Ignore.matches(_, file, root))
+    val ignored = entries.exists(Ignore.matches(_, file, root))
 
-      // Recursively check if the parent is ignored.
-      if (file.getParentFile.compareTo(root) > 0) {
-        // It was already ignored, skip checking for parent folders.
-        if (ignored) true
-        else isIgnored(file.getParentFile)
-      }
-      else ignored
+    // Recursively check if the parent is ignored.
+    if (file.getParentFile.compareTo(root) > 0) {
+      // It was already ignored, skip checking for parent folders.
+      if (ignored) true
+      else isIgnored(file.getParentFile)
     }
+    else ignored
   }
 }
 

@@ -24,17 +24,29 @@ case class Blob(
 ) extends Object
 
 object Blob {
-  def decode(bytes: Seq[Byte], id: ObjectId, repository: Repository, header: Option[ObjectHeader]): Blob = Blob(
-    id = id,
-    header = header match {
-      case Some(v) => v
-      case None => ObjectHeader(ObjectType.Blob)
-    },
-    size = bytes.length,
-    contents = bytes
-  )
+  def decode(bytes: Seq[Byte], id: Option[ObjectId] = None): Blob = {
+    val blob = Blob(
+      id = id match {
+        case Some(v) => v
+        case None => ObjectId("")
+      },
+      header = ObjectHeader(ObjectType.Blob, length = bytes.length),
+      size = bytes.length,
+      contents = bytes
+    )
 
-  def encode(blob: Blob) = ???
+    if (id.isDefined) blob
+    else blob.copy(id = ObjectId.fromBytes(ObjectDatabase.hashObject(Blob.encode(blob))))
+  }
+
+  def encode(blob: Blob): Seq[Byte] = {
+    val builder = Vector.newBuilder[Byte]
+
+    builder ++= blob.header
+    builder ++= blob.contents
+
+    builder.result()
+  }
 
   def findById(id: ObjectId)(repository: Repository): Option[Blob] = ObjectDatabase.findObjectById(id)(repository) match {
     case Some(blob: Blob) => Some(blob)
