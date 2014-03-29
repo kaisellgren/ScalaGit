@@ -78,16 +78,21 @@ object FileUtil {
         val ctimeFractions = (ctime - ctimeSeconds).toInt
 
         (ctimeSeconds, ctimeFractions)
-      } else (0, 0)
+      } else {
+        val ctime = Files.getAttribute(file.toPath, "basic:creationTime").asInstanceOf[FileTime].toMillis
+        val ctimeSeconds = math.floor(ctime / 1000).toInt
+        val ctimeFractions = (ctime - ctimeSeconds).toInt
+        (ctimeSeconds, 0/*ctimeFractions*/)
+      }
     }
 
     val mtime = Files.getAttribute(file.toPath, "basic:lastModifiedTime").asInstanceOf[FileTime].toMillis
     val mtimeSeconds = math.floor(mtime / 1000).toInt
-    val mtimeFractions = (mtime - mtimeSeconds).toInt
+    val mtimeFractions = 0//(mtime - mtimeSeconds).toInt
 
     val device = if (isUnix) Files.getAttribute(file.toPath, "unix:dev").asInstanceOf[Int] else 0
     val inode = if (isUnix) Files.getAttribute(file.toPath, "unix:ino").asInstanceOf[Int] else 0
-    val mode = if (isUnix) Files.getAttribute(file.toPath, "unix:mode").asInstanceOf[Int] else 0
+    val mode = if (isUnix) Files.getAttribute(file.toPath, "unix:mode").asInstanceOf[Int] else 0 // 100644, 1000 0001 1010 0100 for regular file and readable
     val uid = if (isUnix) Files.getAttribute(file.toPath, "unix:uid").asInstanceOf[Int] else 0
     val gid = if (isUnix) Files.getAttribute(file.toPath, "unix:gid").asInstanceOf[Int] else 0
 

@@ -19,5 +19,9 @@ package git.util
 import java.io.File
 
 object PathUtil {
+  /** Combines the root path and the relative path. */
   def combine(pathLeft: String, pathRight: String): String = new File(new File(pathLeft), pathRight).getPath
+
+  /** Returns the relative path given the root and the absolute path. */
+  def relative(root: String, path: String): String = new File(root).toURI.relativize(new File(path).toURI).getPath
 }

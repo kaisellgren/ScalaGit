@@ -42,11 +42,9 @@ object Index {
   def status(repository: Repository): Index = Index.fromFile(new File(s"${repository.path}/index"))(repository)
 
   def add(path: String)(repository: Repository) {
-    val fullPath = PathUtil.combine(repository.wcPath, path)
-
     val status = Index.status(repository)
     val newEntries = status.entries.map((entry) => {
-      if (entry.name == fullPath) entry.copy(status = FileStatus.Staged) // TODO: Removed?
+      if (entry.name == path) entry.copy(status = FileStatus.Staged) // TODO: Removed?
       else entry
     }).filter((entry) => FileStatus.isInStagingArea(entry.status))
 
@@ -64,7 +62,7 @@ object Index {
   }
 
   private[git] def save(index: Index)(repository: Repository) {
-    FileUtil.writeToFile(new File(s"${repository.path}/index"), Index.encode(index))
+    FileUtil.writeToFile(new File(s"${repository.path}/index"), Index.encode(index)(repository))
   }
 
   private[git] def fromFile(file: File)(repository: Repository): Index = {
@@ -78,7 +76,7 @@ object Index {
 
   private[git] def getIndexEntries(indexFileEntries: Seq[IndexFileEntry])(repository: Repository): Seq[IndexEntry] = {
     val ignore = Ignore.fromPath(repository.wcPath)
-    val ignoreDirectories = List(new File(PathUtil.combine(repository.wcPath, ".git")))
+    val ignoreDirectories = Vector(new File(PathUtil.combine(repository.wcPath, ".git")))
 
     FileUtil.recursiveListFiles(new File(repository.wcPath), ignoreDirectories = ignoreDirectories).collect{
       case file: File => indexFileEntries.find((e) => PathUtil.combine(repository.wcPath, e.name) == file.getAbsolutePath) match {
@@ -86,9 +84,9 @@ object Index {
 
         // Not in the index file.
         case None => IndexEntry(
-          name = file.getPath,
+          name = PathUtil.relative(repository.wcPath, file.getPath),
           stageLevel = StageLevel.Ours,
-          id = ObjectId.fromBytes(ObjectDatabase.hashObject(FileUtil.readContents(file))),
+          id = ObjectId.fromBytes(ObjectDatabase.hashObject(Blob.decode(FileUtil.readContents(file)))),
           status = if (ignore.isIgnored(file)) FileStatus.Ignored else FileStatus.Untracked
         )
       }
@@ -181,7 +179,7 @@ object Index {
     )
   }
 
-  def encode(index: Index): Seq[Byte] = {
+  def encode(index: Index)(repository: Repository): Seq[Byte] = {
     val builder = Vector.newBuilder[Byte]
 
     // Header.
@@ -191,7 +189,7 @@ object Index {
 
     // Entries.
     index.entries.foreach((entry) => {
-      val file = new File(entry.name)
+      val file = new File(PathUtil.combine(repository.wcPath, entry.name))
       val stat = FileUtil.stat(file)
 
       builder ++= Conversion.intToBytes(stat.ctime)
@@ -207,11 +205,12 @@ object Index {
 
       builder ++= entry.id
 
-      val assumeValid = 0
-      val extendedFlag = 0
-      val stage = 0
+      val assumeValid = 0 // 1 << 15
+      val extendedFlag = 0 // 1 << 14
+      val stage = 0 // 0x1000, 0x2000, 0x3000
+      val nameLength = if (entry.name.length < 0xfff) entry.name.length else 0xfff
 
-      builder ++= Seq(0, 0) // TODO: Flags.
+      builder ++= Conversion.shortToBytes((0 | assumeValid | extendedFlag | stage | nameLength).toShort)
 
       // TODO: More flags.
       if (index.header.version > 2) {

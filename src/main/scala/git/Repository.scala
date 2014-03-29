@@ -19,52 +19,40 @@ package git
 import java.io.File
 import git.util.FileUtil
 
-case class Repository(
-  path: String,
-  wcPath: String,
-  cache: Cache = Cache()
-)
+case class Repository(path: String, wcPath: String, cache: Cache = Cache())
 
 object Repository {
+  /** Initializes the repository and returns the new instance. */
   def open(path: String): Repository = {
     val workingCopyPath = path.replace(".git", "")
     val repositoryPath = workingCopyPath + "/.git"
 
     initializeRepository(repositoryPath)
 
-    Repository(
-      path = repositoryPath,
-      wcPath = workingCopyPath
-    )
+    Repository(path = repositoryPath, wcPath = workingCopyPath)
   }
 
   private[this] def isInitialized(path: String): Boolean = new File(path + "/HEAD").exists()
 
+  /** Initializes the repository. Creates the necessary folder structure and files. */
   private[this] def initializeRepository(path: String) {
     // If this repository does not exist (user wishes to create a new one), then set up the remaining files.
     if (!isInitialized(path)) {
       // Always ensure we have the basic folder structure.
-      new File(path).mkdirs()
-
-      new File(s"$path/objects/pack").mkdirs()
-      new File(s"$path/objects/info").mkdirs()
-      new File(s"$path/refs/heads").mkdirs()
-      new File(s"$path/refs/tags").mkdirs()
-      new File(s"$path/refs/notes").mkdirs()
-      new File(s"$path/refs/remotes").mkdirs()
+      val paths = Seq(s"$path/objects/pack", s"$path/objects/info", s"$path/refs/head", s"$path/refs/tags", s"$path/refs/notes", s"$path/refs/remotes")
+      paths.foreach((path) => new File(path).mkdirs())
 
       FileUtil.createFileWithContents(s"$path/description", "Unnamed repository; edit this file 'description' to name the repository.\n")
       FileUtil.createFileWithContents(s"$path/HEAD", "ref: refs/heads/master\n")
 
-      // TODO: Let's implement a Config class.
+      // TODO: Let's implement a Config class or something.
       FileUtil.createFileWithContents(s"$path/config", "[core]\n\trepositoryformatversion = 0\n\tfilemode = false\n\tbare = false\n\tlogallrefupdates = true\n\tsymlinks = false\n\tignorecase = true\n\thideDotFiles = dotGitOnly")
     }
   }
 
+  /** Returns the repository head. This is usually a [[Branch]], but can also be [[DetachedHead]]. */
   def head(repository: Repository): Option[BaseBranch] = {
-    val refs = Reference.find(repository)
-
-    refs.head match {
+    Reference.find(repository).head match {
       case None => None
       case Some(head) => Branch.find(repository).find(_.tipId == head.targetIdentifier) match {
         case Some(a: BaseBranch) => Some(a)
@@ -73,6 +61,7 @@ object Repository {
     }
   }
 
+  /** Returns the repository head as a commit. */
   def headAsCommit(repository: Repository): Option[Commit] = {
     Repository.head(repository) match {
       case None => None

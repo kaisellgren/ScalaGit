@@ -23,13 +23,13 @@ case class ObjectHeader(typ: ObjectType, length: Int = 0)
 
 object ObjectHeader {
   def encode(header: ObjectHeader): Seq[Byte] = {
-    val buffer = new ListBuffer[Byte]
+    val buffer = Vector.newBuilder[Byte]
 
-    buffer.appendAll(s"${header.typ} ".getBytes("US-ASCII"))
-    buffer.appendAll(s"${header.length}".getBytes("US-ASCII"))
-    buffer.append(0)
+    buffer ++= s"${header.typ} ".getBytes("US-ASCII")
+    buffer ++= s"${header.length}".getBytes("US-ASCII")
+    buffer ++= "\0".getBytes("US-ASCII")
 
-    buffer.toList
+    buffer.result()
   }
 
   def decode(bytes: Seq[Byte]): ObjectHeader = {

@@ -45,6 +45,18 @@ object Conversion {
     buffer
   }
 
+  /** Converts a short to a sequence of bytes. */
+  def shortToBytes(value: Short): Seq[Byte] = {
+    val buffer = new Array[Byte](2)
+
+    for (i <- 0 until 2) {
+      val offset = (buffer.length - 1 - i) * 8
+      buffer(i) = ((value >>> offset) & 0xff).toByte
+    }
+
+    buffer
+  }
+
   /** Converts bytes into a hex string. */
   def bytesToHexString(bytes: Seq[Byte]): String = {
     // This is slightly faster than DatatypeConverter.printHexBinary().
