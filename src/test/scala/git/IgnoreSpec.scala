@@ -1,10 +1,11 @@
 package git
 
 import org.scalatest._
-import git.util.{FileUtil}
+import git.util.FileUtil
 import java.io.File
 
 class IgnoreSpec extends FlatSpec with Matchers {
+  // Find files that we use to test ignore-rules against.
   val files = FileUtil.recursiveListFiles(new File("src/test/resources/ignore-tests"))
 
   val rules = List(
@@ -36,13 +37,13 @@ class IgnoreSpec extends FlatSpec with Matchers {
   val ignoreFile = Ignore(entries = rules, root = new File("src/test/resources/ignore-tests"))
 
   files.foreach((file) => {
-    if (ignoreFile.isIgnored(file)) {
+    if (Ignore.isIgnored(ignoreFile, file)) {
       s"${file.getPath}" should "be ignored" in {
-        assert(shouldBeIgnored.contains(file), s"'${file.getPath}' should not be ignored.")
+        assert(shouldBeIgnored.contains(file))
       }
     } else {
       s"${file.getPath}" should "NOT be ignored" in {
-        assert(!shouldBeIgnored.contains(file), s"'${file.getPath}' should be ignored.")
+        assert(!shouldBeIgnored.contains(file))
       }
     }
   })
