@@ -19,7 +19,7 @@ package git
 import org.scalatest.{Matchers, FlatSpec}
 import java.io.File
 import git.util.FileUtil
-import org.joda.time.DateTime
+import org.joda.time.{DateTimeZone, DateTime}
 
 class TagSpec extends FlatSpec with Matchers {
   // Create an example tag.
@@ -30,7 +30,7 @@ class TagSpec extends FlatSpec with Matchers {
     message = Some("foo!"),
     taggerName = Some("Kai"),
     taggerEmail = Some("kaisellgren@gmail.com"),
-    tagDate = Some(new DateTime(2014, 1, 2, 3, 4, 5).toDate),
+    tagDate = Some(new DateTime(2014, 1, 2, 3, 4, 5, DateTimeZone.forOffsetHours(2)).toDate),
     tagType = TagType.Annotated,
     targetIdentifier = ObjectId("31382bef9edff398e699822d1a49925159b3a26c")
   )
@@ -74,6 +74,6 @@ class TagSpec extends FlatSpec with Matchers {
   }
 
   it should "date back to 1st Feb 2014, 03:04:05 o'clock" in {
-    tag2.tagDate shouldBe Some(new DateTime(2014, 1, 2, 3, 4, 5).toDate)
+    tag2.tagDate shouldBe Some(new DateTime(2014, 1, 2, 3, 4, 5, DateTimeZone.forOffsetHours(2)).toDate)
   }
 }

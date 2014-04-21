@@ -2,7 +2,7 @@
 .idea_modules
 /out/
 target/
-src/test/resources/repositories/*
+src/test/resources/repositories/temp/*
 src/test/scala/git/test.scala
 api.txt
 src/test/scala/test

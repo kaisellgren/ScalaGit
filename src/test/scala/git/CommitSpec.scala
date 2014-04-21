@@ -3,7 +3,7 @@ package git
 import org.scalatest.{Matchers, FlatSpec}
 import java.io.File
 import git.util.FileUtil
-import org.joda.time.DateTime
+import org.joda.time.{DateTimeZone, DateTime}
 
 class CommitSpec extends FlatSpec with Matchers {
   // Create an example commit.
@@ -11,9 +11,9 @@ class CommitSpec extends FlatSpec with Matchers {
     id = ObjectId("6987b5626be09f59e84cb64c36b8e8a15a198798"),
     header = ObjectHeader(ObjectType.Commit),
     authorName = "Kai",
-    authorDate = new DateTime(2014, 1, 2, 3, 4, 5).toDate,
+    authorDate = new DateTime(2014, 1, 2, 3, 4, 5, DateTimeZone.forOffsetHours(2)).toDate,
     authorEmail = "kaisellgren@gmail.com",
-    commitDate = new DateTime(2014, 1, 2, 3, 4, 6).toDate,
+    commitDate = new DateTime(2014, 1, 2, 3, 4, 6, DateTimeZone.forOffsetHours(2)).toDate,
     committerEmail = "kaisellgren+foo@gmail.com",
     committerName = "Kai 2",
     message = "foo bar baz qux",
@@ -49,13 +49,13 @@ class CommitSpec extends FlatSpec with Matchers {
   }
 
   it should "have correct author details" in {
-    commit2.authorDate shouldBe new DateTime(2014, 1, 2, 3, 4, 5).toDate
+    commit2.authorDate shouldBe new DateTime(2014, 1, 2, 3, 4, 5, DateTimeZone.forOffsetHours(2)).toDate
     commit2.authorEmail shouldBe "kaisellgren@gmail.com"
     commit2.authorName shouldBe "Kai"
   }
 
   it should "have correct committer details" in {
-    commit2.commitDate shouldBe new DateTime(2014, 1, 2, 3, 4, 6).toDate
+    commit2.commitDate shouldBe new DateTime(2014, 1, 2, 3, 4, 6, DateTimeZone.forOffsetHours(2)).toDate
     commit2.committerEmail shouldBe "kaisellgren+foo@gmail.com"
     commit2.committerName shouldBe "Kai 2"
   }
