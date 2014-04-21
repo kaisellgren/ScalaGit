@@ -34,7 +34,10 @@ Commit.find(repo).foreach((c: Commit) => println(c.authorName))
 Commit.find(CommitFilter(limit = 10))(repo).foreach(println)
 
 // Print branch tip ids.
-Branch.find(repo).foreach((b: Branch) => println(Branch.tip(b)(repo).id))
+Branch.find(repo).foreach((branch: Branch) => {
+  val tip = Branch.tip(branch)(repo)
+  println(tip.id)
+})
 
 // Print repository head.
 Repository.head(repo) match {
@@ -50,6 +53,9 @@ val commit = Tag.commit(tag)
 
 // Delete the tag we just created.
 Tag.delete(tag) // or just Tag.delete("something")
+
+// Adds the given entity to the index.
+Index.add("path/to/file")(repo)
 ```
 
 ## Contributing
