@@ -41,6 +41,7 @@ case class DetachedHead(tipId: ObjectId) extends BaseBranch {
 }
 
 object Branch {
+  /** Returns every branch. */
   def find(repository: Repository): Seq[Branch] = {
     val buffer = Vector.newBuilder[Branch]
 
@@ -62,10 +63,12 @@ object Branch {
     buffer.result()
   }
 
+  /** Returns the tip of the given branch. */
   def tip(branch: BaseBranch)(repository: Repository): Commit = ObjectDatabase.findObjectById(branch.tipId)(repository) match {
     case Some(o: Commit) => o
     case _ => throw new CorruptRepositoryException(s"Could not find the commit the branch ${branch.name} points to.")
   }
 
+  /** Returns every commit on the given branch. */
   def commits(branch: BaseBranch)(repository: Repository): Seq[Commit] = Commit.find(CommitFilter(since = Some(List(branch))))(repository)
 }

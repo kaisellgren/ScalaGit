@@ -28,14 +28,16 @@ case class PackIndex(
   packFile: PackFile
 ) {
   def has(id: ObjectId) = objectIds.contains(id)
-
-  def findOffset(id: ObjectId): Option[Int] = {
-    if (has(id)) Some(offsets(objectIds.indexOf(id)))
-    else None
-  }
 }
 
 object PackIndex {
+  /** Returns the offset for the given ID inside the pack index. */
+  def findOffset(packIndex: PackIndex, id: ObjectId): Option[Int] = {
+    if (packIndex.has(id)) Some(packIndex.offsets(packIndex.objectIds.indexOf(id)))
+    else None
+  }
+
+  /** Returns the bytes decoded as a pack index. */
   def decode(bytes: Seq[Byte], packFile: PackFile): PackIndex = {
     val reader = new DataReader(bytes)
 
@@ -76,10 +78,11 @@ object PackIndex {
     PackIndex(fanOutTable, objectIds, offsets, length, packFile)
   }
 
+  /** Returns every pack index. */
   private[git] def findPackIndexes(repository: Repository): Seq[PackIndex] = {
     Cache.getPackIndexes(repository) match {
       case Some(indexes: Seq[PackIndex]) => indexes
-      case _ => {
+      case _ =>
         val buffer = Vector.newBuilder[PackIndex]
 
         new File(repository.path + "/objects/pack").listFiles.filter(_.getName.endsWith(".idx")).foreach((file: File) => {
@@ -90,7 +93,6 @@ object PackIndex {
         })
 
         Cache.setPackIndexes(repository, buffer.result())
-      }
     }
   }
 }

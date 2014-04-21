@@ -59,8 +59,6 @@ object Conversion {
 
   /** Converts bytes into a hex string. */
   def bytesToHexString(bytes: Seq[Byte]): String = {
-    // This is slightly faster than DatatypeConverter.printHexBinary().
-
     val hexChars = new Array[Char](bytes.length * 2)
 
     for (i <- 0 until bytes.length) {

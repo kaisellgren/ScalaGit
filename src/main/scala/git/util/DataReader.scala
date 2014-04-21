@@ -17,15 +17,13 @@
 package git.util
 
 import git.ObjectId
-import scala.collection.mutable.ListBuffer
 import scala.annotation.tailrec
-import scala.concurrent.stm._
 
-case object Take
-
-/** A simple data reader utility for Scala Git data parsing and manipulation purposes. */
+/** A simple data reader utility for data parsing and manipulation purposes.
+  * This should not be used in threaded environment.
+  */
 class DataReader(data: Seq[Byte]) {
-  private[this] val _position = Ref(0)
+  private[this] var _position = 0
 
   /** Take `length` amount of bytes and move forward. */
   def take(length: Int): Seq[Byte] = {
@@ -65,7 +63,7 @@ class DataReader(data: Seq[Byte]) {
   def takeStringBasedObjectId(): ObjectId = ObjectId(takeString(40))
 
   /** Returns an `ObjectId` based on raw data and moves forward. */
-  def takeObjectId(): ObjectId = ObjectId.fromBytes(take(ObjectId.RawSize))
+  def takeObjectId(): ObjectId = ObjectId.decode(take(ObjectId.RawSize))
 
   /** Returns the rest of the data. */
   def getRest: Seq[Byte] = data.takeRight(data.length - position)
@@ -77,18 +75,14 @@ class DataReader(data: Seq[Byte]) {
   def get(length: Int): Seq[Byte] = data.slice(position, position + length)
 
   /** Skip `length` amount of bytes. */
-  def skip(length: Int) = atomic { implicit txn =>
-    _position() = _position() + length
-  }
+  def skip(length: Int): Unit = {_position = _position + length}
 
   /** Returns the current internal position. */
-  def position = atomic { implicit txn =>
-    _position()
-  }
+  def position = _position
 
   /** Moves the internal position forward. */
-  def >>(length: Int) = skip(length)
+  def >>(length: Int): Unit = skip(length)
 
   /** Moves the internal position backward. */
-  def <<(length: Int) = skip(-length)
+  def <<(length: Int): Unit = skip(-length)
 }

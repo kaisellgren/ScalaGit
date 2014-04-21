@@ -21,6 +21,7 @@ import java.io.ByteArrayOutputStream
 import java.util.zip.{Deflater, Inflater}
 
 object Compressor {
+  /** Returns inflated data. */
   def decompressData(bytes: Seq[Byte]): Seq[Byte] = {
     val i = new Inflater
     i.setInput(bytes.toArray)
@@ -37,6 +38,7 @@ object Compressor {
     output.toByteArray
   }
 
+  /** Returns deflated data. */
   def compressData(bytes: Seq[Byte]): Seq[Byte] = {
     val i = new Deflater
     i.setInput(bytes.toArray)

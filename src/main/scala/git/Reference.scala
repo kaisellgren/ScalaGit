@@ -19,7 +19,7 @@ package git
 import java.io.File
 import scala.io.Source
 
-// remote: Remote // TODO: Implement remotes.
+// TODO: Implement remotes.
 case class Reference(canonicalName: String, targetIdentifier: ObjectId, remoteName: Option[String] = None)
 
 object Reference {
@@ -28,21 +28,22 @@ object Reference {
   val TagPrefix = "/refs/tags/"
   val NotePrefix = "/refs/notes/"
 
+  /** Returns every reference in the given repository. */
   private[git] def find(repository: Repository): ReferenceCollection = {
     // Create references based on the refs folder.
     val localReferences = new File(repository.path + Reference.LocalBranchPrefix).listFiles.map(file => Reference(file.getName, ObjectId(Source.fromFile(file).mkString.trim))).toList
 
     // TODO: Improve.
     val buffer = Vector.newBuilder[Reference]
+
     new File(repository.path + Reference.RemoteTrackingBranchPrefix).listFiles.foreach((folder: File) => {
       if (folder.isDirectory) {
         folder.listFiles.foreach((file: File) => {
-          val ref = Reference(file.getName, ObjectId(Source.fromFile(file).mkString.trim), remoteName = Some(folder.getName))
-
-          if (file.getName != "HEAD") buffer += ref
+          if (file.getName != "HEAD") buffer += Reference(file.getName, ObjectId(Source.fromFile(file).mkString.trim), remoteName = Some(folder.getName))
         })
       }
     })
+
     val remoteReferences = buffer.result()
 
     // Create the HEAD reference. Read the HEAD file and figure out the canonical name.

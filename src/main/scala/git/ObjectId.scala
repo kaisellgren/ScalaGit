@@ -31,14 +31,16 @@ object ObjectId {
   val RawSize = 20
   val HexSize = 40
 
-  def fromBytes(bytes: Seq[Byte]) = ObjectId(Conversion.bytesToHexString(bytes), bytes = Some(bytes))
+  /** Returns the byte sequence decoded as an ObjectId. */
+  def decode(bytes: Seq[Byte]) = ObjectId(Conversion.bytesToHexString(bytes), bytes = Some(bytes))
 
-  /** Constructs ObjectId from plain byte sha. It strips the whitespace from the end if any. */
+  /** Returns the ObjectId constructed from plain text byte sequence. It strips the whitespace from the end if any. */
   def fromPlain(bytes: Seq[Byte]) = {
     val data = bytes.take(40).toList
     ObjectId(new String(data), bytes = Some(data))
   }
 
+  /** Returns the ObjectId encoded as a byte sequence. */
   def encode(id: ObjectId): Seq[Byte] = id.bytes match {
     case Some(data) => data
     case _ => Conversion.hexStringToBytes(id.sha)

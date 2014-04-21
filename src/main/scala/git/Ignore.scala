@@ -21,34 +21,37 @@ import git.util.{PathUtil}
 import java.io.File
 import scala.annotation.tailrec
 
-case class Ignore(entries: Seq[String], root: File) {
-  //@tailrec TODO: tailrec
-  def isIgnored(file: File): Boolean = {
-    val ignored = entries.exists(Ignore.matches(_, file, root))
+case class Ignore(entries: Seq[String], root: File)
+
+object Ignore {
+  /** Returns whether the given file ignored by the given ignore spec. */
+  def isIgnored(ignore: Ignore, file: File): Boolean = {
+    val ignored = ignore.entries.exists(Ignore.matches(_, file, ignore.root))
 
     // Recursively check if the parent is ignored.
-    if (file.getParentFile.compareTo(root) > 0) {
+    // TODO: Not TCO.
+    if (file.getParentFile.compareTo(ignore.root) > 0) {
       // It was already ignored, skip checking for parent folders.
       if (ignored) true
-      else isIgnored(file.getParentFile)
+      else isIgnored(ignore, file.getParentFile)
     }
     else ignored
   }
-}
 
-object Ignore {
+  /** Returns new Ignore constructed from the given path. */
   def fromPath(wcPath: String): Ignore = {
     val file = new File(s"$wcPath/.gitignore")
     if (!file.exists()) Ignore(entries = Seq(), root = new File(wcPath))
     else Ignore(entries = Source.fromFile(file).getLines().toVector, root = new File(wcPath))
   }
 
-  private def regexFromGlob(glob: String) = {
+  /** Returns a RegExp from the given glob string. */
+  private[Ignore] def regexFromGlob(glob: String) = {
     val out = new StringBuffer
 
     out.append(".*")
 
-    for (i <- glob) i match {
+    for (i <- glob.toCharArray) i match {
       case '*' => out.append("[^/]*")
       case '?' => out.append(".")
       case '.' => out.append("\\.")
@@ -61,8 +64,8 @@ object Ignore {
     out.toString
   }
 
-  /** Tries to match the pattern against the given path. Empty patterns do not match. */
-  private def matches(pattern: String, file: File, root: File): Boolean = {
+  /** Returns true if the pattern matches against the given path. Empty patterns do not match. */
+  private[Ignore] def matches(pattern: String, file: File, root: File): Boolean = {
     if (pattern.startsWith("#") || pattern.isEmpty) false
     else {
       val matches = {

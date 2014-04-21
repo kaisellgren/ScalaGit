@@ -16,6 +16,7 @@
 
 package git
 
+/** The base Git object. */
 trait Object {
   def id: ObjectId
   def header: ObjectHeader

@@ -18,7 +18,7 @@ package git
 package util
 
 import java.io.{BufferedInputStream, File, FileInputStream, FileOutputStream}
-import java.nio.file.{FileSystems, Files}
+import java.nio.file.Files
 import java.nio.file.attribute.FileTime
 
 case class FileStat(
@@ -35,17 +35,23 @@ case class FileStat(
 )
 
 object FileUtil {
+  /** Returns the file contents as a String. */
   def readString(file: File): String = new String(readContents(file).toArray)
 
+  /** Returns the file contents as a byte sequence. */
   def readContents(file: File): Seq[Byte] = {
     val bis = new BufferedInputStream(new FileInputStream(file))
-    val bytes = Stream.continually(bis.read).takeWhile(-1 !=).map(_.toByte).toList
-    bis.close()
+    val bytes = try {
+      Stream.continually(bis.read).takeWhile(-1 !=).map(_.toByte).toList
+    } finally {
+      bis.close()
+    }
 
     bytes
   }
 
-  def writeToFile(file: File, data: Seq[Byte]) = {
+  /** Writes the given data to the given file. */
+  def writeToFile(file: File, data: Seq[Byte]): Unit = {
     val fos = new FileOutputStream(file)
     try {
       fos.write(data.toArray)
@@ -53,14 +59,16 @@ object FileUtil {
       fos.close()
     }
   }
-  
-  def createFileWithContents(path: String, data: String) = {
+
+  /** Creates a file with the given contents. */
+  def createFileWithContents(path: String, data: String): Unit = {
     val f = new File(path)
     f.createNewFile()
 
     FileUtil.writeToFile(f, data.getBytes.toList)
   }
 
+  /** Returns every file under the given folder recursively. */
   def recursiveListFiles(file: File, ignoreDirectories: Seq[File] = Seq()): Array[File] = {
     val these = file.listFiles.filterNot((f) => ignoreDirectories.contains(f))
 

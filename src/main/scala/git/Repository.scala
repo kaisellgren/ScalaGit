@@ -32,16 +32,17 @@ object Repository {
     Repository(path = repositoryPath, wcPath = workingCopyPath)
   }
 
+  /** Returns true if the given repository has been initialized. */
   private[this] def isInitialized(path: String): Boolean = new File(path + "/HEAD").exists()
 
   /** Initializes the repository. Creates the necessary folder structure and files. */
   private[this] def initializeRepository(path: String) {
+    // Always ensure we have the basic folder structure.
+    val paths = Seq(s"$path/objects/pack", s"$path/objects/info", s"$path/refs/tags", s"$path/refs/notes", s"$path/refs/remotes")
+    paths.foreach((path) => new File(path).mkdirs())
+
     // If this repository does not exist (user wishes to create a new one), then set up the remaining files.
     if (!isInitialized(path)) {
-      // Always ensure we have the basic folder structure.
-      val paths = Seq(s"$path/objects/pack", s"$path/objects/info", s"$path/refs/head", s"$path/refs/tags", s"$path/refs/notes", s"$path/refs/remotes")
-      paths.foreach((path) => new File(path).mkdirs())
-
       FileUtil.createFileWithContents(s"$path/description", "Unnamed repository; edit this file 'description' to name the repository.\n")
       FileUtil.createFileWithContents(s"$path/HEAD", "ref: refs/heads/master\n")
 
@@ -61,7 +62,7 @@ object Repository {
     }
   }
 
-  /** Returns the repository head as a commit. */
+  /** Returns the repository head as an optional commit. */
   def headAsCommit(repository: Repository): Option[Commit] = {
     Repository.head(repository) match {
       case None => None

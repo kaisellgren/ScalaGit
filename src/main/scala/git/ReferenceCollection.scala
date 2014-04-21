@@ -21,5 +21,6 @@ case class ReferenceCollection(
   localReferences: Seq[Reference],
   remoteReferences: Seq[Reference]
 ) {
-  def references: Seq[Reference] = localReferences ++ remoteReferences
+  /** Returns every reference. */
+  lazy val references: Seq[Reference] = (localReferences ++ remoteReferences).toVector
 }
