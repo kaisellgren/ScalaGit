@@ -17,7 +17,6 @@
 package git
 
 import git.ObjectType.ObjectType
-import scala.collection.mutable.ListBuffer
 
 case class ObjectHeader(typ: ObjectType, length: Int = 0)
 
@@ -25,9 +24,9 @@ object ObjectHeader {
   def encode(header: ObjectHeader): Seq[Byte] = {
     val buffer = Vector.newBuilder[Byte]
 
-    buffer ++= s"${header.typ} ".getBytes("US-ASCII")
-    buffer ++= s"${header.length}".getBytes("US-ASCII")
-    buffer ++= "\0".getBytes("US-ASCII")
+    buffer ++= s"${header.typ} "
+    buffer ++= s"${header.length}"
+    buffer ++= "\0"
 
     buffer.result()
   }

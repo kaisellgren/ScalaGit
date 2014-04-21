@@ -19,6 +19,7 @@ package object git {
   implicit def objectToBytes(o: Object): Seq[Byte] = Object.encode(o)
   implicit def objectIdToBytes(o: ObjectId): Seq[Byte] = ObjectId.encode(o)
   implicit def objectHeaderToBytes(o: ObjectHeader): Seq[Byte] = ObjectHeader.encode(o)
+  implicit def stringToBytes(o: String): Seq[Byte] = o.getBytes("US-ASCII")
 
   private[git] def warning(message: String): Unit = System.err.println("[warning] " + message)
 }

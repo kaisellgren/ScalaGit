@@ -31,6 +31,7 @@ object PackFile {
   val ReservedBitFlag = 5
   val OffsetDelta = 6
 
+  /** Returns the object for the given ID. */
   def findById(repository: Repository, pack: PackFile, offset: Int, id: ObjectId): Object = {
     val raf = new RandomAccessFile(pack.file, "r")
     raf.seek(offset)
@@ -64,10 +65,10 @@ object PackFile {
     val objectBytes = Compressor.decompressData(deflatedBytes.toList)
 
     typeFlag match {
-      case PackFile.BlobBitFlag => Blob.decode(objectBytes, id = Some(id))
-      case PackFile.CommitBitFlag => Commit.decode(objectBytes, id = Some(id))
-      case PackFile.TagBitFlag => Tag.decode(objectBytes, id = Some(id))
-      case PackFile.TreeBitFlag => Tree.decode(objectBytes, id = Some(id))
+      case PackFile.BlobBitFlag => Blob.decodeBody(objectBytes, id = Some(id))
+      case PackFile.CommitBitFlag => Commit.decodeBody(objectBytes, id = Some(id))
+      case PackFile.TagBitFlag => Tag.decodeBody(objectBytes, id = Some(id))
+      case PackFile.TreeBitFlag => Tree.decodeBody(objectBytes, id = Some(id))
       case _ => throw new CorruptRepositoryException(s"Could not parse object type: $typeFlag") // TODO: Deltas
     }
   }

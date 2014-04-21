@@ -19,19 +19,12 @@ package git
 import git.util.{Conversion, DataReader, PathUtil, FileUtil}
 import java.io.File
 import java.util.{GregorianCalendar, Date}
-import scala.collection.mutable.ListBuffer
-import java.nio.file.Files
-import java.nio.file.attribute.{FileTime, BasicFileAttributes}
 import java.security.MessageDigest
 
 case class IndexFileHeader(version: Int, entryCount: Int)
-
 case class IndexFileEntryStat(ctime: Date, mtime: Date, device: Int, inode: Int, mode: Int, uid: Int, gid: Int, size: Int)
-
 case class IndexFileExtension(name: Seq[Byte], size: Int, data: Seq[Byte])
-
 case class IndexFileEntry(stat: IndexFileEntryStat, id: ObjectId, flags: Seq[Byte], name: String)
-
 case class IndexEntry(name: String, mode: Int = 429, stageLevel: StageLevel.StageLevel, id: ObjectId, status: Int)
 
 case class Index(header: IndexFileHeader, entries: Seq[IndexEntry], extensions: Seq[IndexFileExtension]) {
@@ -39,32 +32,38 @@ case class Index(header: IndexFileHeader, entries: Seq[IndexEntry], extensions: 
 }
 
 object Index {
+  /** Returns the current repository status as new Index. */
   def status(repository: Repository): Index = Index.fromFile(new File(s"${repository.path}/index"))(repository)
 
-  def add(path: String)(repository: Repository) {
+  /** Adds the given path to the index. */
+  def add(path: String)(repository: Repository): Unit = {
     val status = Index.status(repository)
-    val newEntries = status.entries.map((entry) => {
+    val newEntries = status.entries.map((entry: IndexEntry) => {
       if (entry.name == path) entry.copy(status = FileStatus.Staged) // TODO: Removed?
       else entry
     }).filter((entry) => FileStatus.isInStagingArea(entry.status))
 
-    val updatedStatus = status.copy(entries = newEntries)
+    val updatedStatus = status.copy(entries = newEntries.toVector)
 
     Index.save(updatedStatus)(repository)
   }
 
-  def remove(path: String)(repository: Repository) {
-
+  /** Removes the given path from the index. */
+  def remove(path: String)(repository: Repository): Unit = {
+    ???
   }
 
+  /** Returns the status of the given file. */
   def retrieveFileStatus(file: File): Int = {
     ???
   }
 
-  private[git] def save(index: Index)(repository: Repository) {
+  /** Saves the index to the 'index'-file. */
+  private[git] def save(index: Index)(repository: Repository): Unit = {
     FileUtil.writeToFile(new File(s"${repository.path}/index"), Index.encode(index)(repository))
   }
 
+  /** Returns a new Index constructed from the given file. */
   private[git] def fromFile(file: File)(repository: Repository): Index = {
     if (file.exists()) Index.decode(FileUtil.readContents(file))(repository)
     else Index(
@@ -74,6 +73,7 @@ object Index {
     )
   }
 
+  /** Returns every index entry. */
   private[git] def getIndexEntries(indexFileEntries: Seq[IndexFileEntry])(repository: Repository): Seq[IndexEntry] = {
     val ignore = Ignore.fromPath(repository.wcPath)
     val ignoreDirectories = Vector(new File(PathUtil.combine(repository.wcPath, ".git")))
@@ -86,14 +86,15 @@ object Index {
         case None => IndexEntry(
           name = PathUtil.relative(repository.wcPath, file.getPath),
           stageLevel = StageLevel.Ours,
-          id = ObjectId.fromBytes(ObjectDatabase.hashObject(Blob.decode(FileUtil.readContents(file)))),
-          status = if (ignore.isIgnored(file)) FileStatus.Ignored else FileStatus.Untracked
+          id = ObjectId.decode(ObjectDatabase.hashObject(Blob.decodeBody(FileUtil.readContents(file)))),
+          status = if (Ignore.isIgnored(ignore, file)) FileStatus.Ignored else FileStatus.Untracked
         )
       }
     }
   }
 
-  private[git] def decode(bytes: Seq[Byte])(repository: Repository) = {
+  /** Returns the bytes decoded as an Index. */
+  private[git] def decode(bytes: Seq[Byte])(repository: Repository): Index = {
     val reader = new DataReader(bytes)
 
     if (reader.takeString(4) != "DIRC") throw new CorruptRepositoryException("Corrupted Index file.")
@@ -162,6 +163,8 @@ object Index {
       val signature = reader.take(4)
       val size = Conversion.bytesToInt(reader.take(4))
       val data = reader.take(size)
+
+      // TODO: Create the signature.
       /*println(signature)
       println(size)
       println(new String(data.toArray))*/
@@ -179,11 +182,12 @@ object Index {
     )
   }
 
+  /** Returns the index encoded as a sequence of bytes. */
   def encode(index: Index)(repository: Repository): Seq[Byte] = {
     val builder = Vector.newBuilder[Byte]
 
     // Header.
-    builder ++= "DIRC".getBytes("US-ASCII")
+    builder ++= "DIRC"
     builder ++= Conversion.intToBytes(index.header.version)
     builder ++= Conversion.intToBytes(index.length)
 
@@ -218,7 +222,7 @@ object Index {
       }
 
       if (index.header.version < 4) {
-        builder ++= entry.name.getBytes("US-ASCII")
+        builder ++= entry.name
 
         // Null padding 1-8 bytes, retaining the total size in multiple of eight.
         val total = if (62 + entry.name.length % 8 == 0) 62 + entry.name.length + 8 else 62 + entry.name.length
@@ -232,7 +236,7 @@ object Index {
 
     // Extensions.
     index.extensions.foreach((extension) => {
-
+      // TODO: Write extensions.
     })
 
     // Checksum.

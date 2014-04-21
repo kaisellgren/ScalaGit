@@ -22,17 +22,16 @@ import scala.annotation.tailrec
 import java.security.MessageDigest
 
 object ObjectDatabase {
+  /** Returns the ObjectId for the given sequence of bytes. */
   def hashObject(bytes: Seq[Byte]): ObjectId = {
     val digest = MessageDigest.getInstance("SHA-1")
-    ObjectId.fromBytes(digest.digest(bytes.toArray))
+    ObjectId.decode(digest.digest(bytes.toArray))
   }
 
-  /**
-   * Finds one Git object from the object database by its identifier.
-   */
+  /** Finds the object from the database for the given ID. */
   private[git] def findObjectById(id: ObjectId)(repository: Repository): Option[Object] = {
     // Try to look into the object files first.
-    val file = new File(s"${repository.path}/objects/${id.sha.take(2)}/${id.sha.substring(2)}")
+    val file = new File(s"${repository.path}/objects/${id.sha.substring(0, 2)}/${id.sha.substring(2)}")
 
     // TODO: Swap the if.
 
@@ -49,10 +48,10 @@ object ObjectDatabase {
       val objectFileData = bytes.takeRight(header.length)
 
       Some(header.typ match {
-        case ObjectType.Commit => Commit.decode(objectFileData, id = Some(id))
-        case ObjectType.Tree => Tree.decode(objectFileData, id = Some(id))
-        case ObjectType.Blob => Blob.decode(objectFileData, id = Some(id))
-        case ObjectType.Tag => Tag.decode(objectFileData, id = Some(id))
+        case ObjectType.Commit => Commit.decodeBody(objectFileData, id = Some(id), header = Some(header))
+        case ObjectType.Tree => Tree.decodeBody(objectFileData, id = Some(id), header = Some(header))
+        case ObjectType.Blob => Blob.decodeBody(objectFileData, id = Some(id), header = Some(header))
+        case ObjectType.Tag => Tag.decodeBody(objectFileData, id = Some(id), header = Some(header))
         case _ => throw new NotImplementedError(s"Object type '${header.typ}' is not implemented!")
       })
     } else {
@@ -60,9 +59,9 @@ object ObjectDatabase {
       @tailrec
       def find(indexes: Seq[PackIndex]): Option[Object] = {
         if (indexes.length == 0) None
-        else indexes.head.findOffset(id) match {
+        else PackIndex.findOffset(indexes.head, id) match {
           case Some(offset: Int) => Some(PackFile.findById(repository, indexes.head.packFile, offset, id))
-          case _ => find(indexes.tail)
+          case _ => find(indexes.tail.toSeq)
         }
       }
 
@@ -70,7 +69,8 @@ object ObjectDatabase {
     }
   }
 
-  private[git] def deleteObjectById(id: ObjectId)(repository: Repository) = {
+  /** Deletes the given object from the database by its ID. */
+  private[git] def deleteObjectById(id: ObjectId)(repository: Repository): Unit = {
     val file = objectIdToObjectFile(repository, id)
 
     // Either it's an object file, or part of the pack file.
@@ -80,15 +80,18 @@ object ObjectDatabase {
     }
   }
 
-  private [git] def deleteObject(o: Object)(repository: Repository) = deleteObjectById(o.id)(repository)
+  /** Deletes the given object from the database. */
+  private [git] def deleteObject(o: Object)(repository: Repository): Unit = deleteObjectById(o.id)(repository)
 
-  private[git] def addObject(repository: Repository, obj: Object) = {
+  /** Adds the given object to the database. */
+  private[git] def addObject(repository: Repository, obj: Object): Unit = {
     val file = objectIdToObjectFile(repository, obj.id)
     file.mkdirs()
 
     FileUtil.writeToFile(file, Compressor.compressData(obj))
   }
 
+  /** Returns the object File representing the given ObjectId. */
   private[git] def objectIdToObjectFile(repository: Repository, id: ObjectId): File = {
     val folderName = id.sha.substring(0, 2)
     val filename = id.sha.substring(2)
@@ -96,8 +99,4 @@ object ObjectDatabase {
 
     new File(s"$folderPath/$filename")
   }
-
-  /*def test(a: Int): State[Repository, Int] = State(repo => {
-    (repo.copy(foos = repo.foos :+ a), a)
-  })*/
 }

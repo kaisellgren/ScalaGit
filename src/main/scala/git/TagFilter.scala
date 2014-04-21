@@ -16,6 +16,4 @@
 
 package git
 
-case class TagFilter(
-  containsCommit: Option[ObjectId]
-)
+case class TagFilter(containsCommit: Option[ObjectId])
