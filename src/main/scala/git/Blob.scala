@@ -24,30 +24,48 @@ case class Blob(
 ) extends Object
 
 object Blob {
-  def decode(bytes: Seq[Byte], id: Option[ObjectId] = None): Blob = {
-    val blob = Blob(
-      id = id match {
-        case Some(v) => v
-        case None => ObjectId("")
-      },
-      header = ObjectHeader(ObjectType.Blob, length = bytes.length),
-      size = bytes.length,
-      contents = bytes
-    )
-
-    if (id.isDefined) blob
-    else blob.copy(id = ObjectId.fromBytes(ObjectDatabase.hashObject(Blob.encode(blob))))
-  }
-
-  def encode(blob: Blob): Seq[Byte] = {
+  /** Returns the blob encoded as a sequence of bytes. */
+  private[git] def encode(blob: Blob): Seq[Byte] = {
     val builder = Vector.newBuilder[Byte]
 
-    builder ++= blob.header
-    builder ++= blob.contents
+    val body = Blob.encodeBody(blob)
+    val header = if (blob.header.length > 0) blob.header else blob.header.copy(length = body.length)
+
+    builder ++= header
+    builder ++= body
 
     builder.result()
   }
 
+  /** Returns the blob body encoded as a sequence of bytes. */
+  private[git] def encodeBody(blob: Blob): Seq[Byte] = blob.contents
+
+  /** Returns the bytes decoded as a Blob body. */
+  private[git] def decodeBody(bytes: Seq[Byte], id: Option[ObjectId] = None, header: Option[ObjectHeader] = None): Blob = {
+    val blob = Blob(
+      id = id.getOrElse(ObjectId("")),
+      header = header.getOrElse(ObjectHeader(ObjectType.Blob)),
+      size = bytes.length,
+      contents = bytes
+    )
+
+    id match {
+      case Some(value) => blob
+      case None => blob.copy(
+        id = ObjectId.decode(ObjectDatabase.hashObject(Blob.encode(blob)))
+      )
+    }
+  }
+
+  /** Returns the bytes decoded as a Blob. */
+  private[git] def decode(bytes: Seq[Byte]): Blob = {
+    val header = ObjectHeader.decode(bytes)
+    val data = bytes.takeRight(header.length)
+
+    decodeBody(data, id = None, header = Some(header))
+  }
+
+  /** Returns the blob for the given ID as [[Option]]. */
   def findById(id: ObjectId)(repository: Repository): Option[Blob] = ObjectDatabase.findObjectById(id)(repository) match {
     case Some(blob: Blob) => Some(blob)
     case _ => None

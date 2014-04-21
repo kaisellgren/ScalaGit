@@ -19,7 +19,7 @@ package git
 import java.util.Date
 import git.TagType.TagType
 import git.util.Parser._
-import git.util.{FileUtil, DataReader}
+import git.util.{Parser, FileUtil, DataReader}
 import java.io.File
 
 case class Tag(
@@ -35,11 +35,13 @@ case class Tag(
 ) extends Object
 
 object Tag {
+  /** Returns the commit for the given tag. */
   def commit(tag: Tag)(repository: Repository): Commit = ObjectDatabase.findObjectById(tag.targetIdentifier)(repository) match {
     case Some(c: Commit) => c
     case _ => throw new CorruptRepositoryException(s"Could not find the commit the tag points to: ${tag.targetIdentifier}")
   }
 
+  /** Returns tags based on the given criteria. */
   def find(filter: Option[TagFilter])(repository: Repository): Seq[Tag] = {
     // TODO: We're not searching pack indexes.
 
@@ -59,8 +61,10 @@ object Tag {
     tagBuffer.result()
   }
 
+  /** Returns every tag based on the default criteria. */
   def find(repository: Repository): Seq[Tag] = find(filter = None)(repository)
 
+  /** Deletes the given tag. */
   def delete(name: String)(repository: Repository): Unit = {
     try {
       new File(repository.path + Reference.TagPrefix + name).delete()
@@ -71,8 +75,10 @@ object Tag {
     Cache.deleteTag(repository, name)
   }
 
+  /** Deletes the given tag. */
   def delete(tag: Tag)(repository: Repository): Unit = delete(tag.name)(repository)
 
+  /** Creates the given tag. */
   def create(name: String, targetId: Option[ObjectId] = None)(repository: Repository) = {
     val actualTargetId = targetId match {
       case Some(id: ObjectId) => id
@@ -86,11 +92,11 @@ object Tag {
 
     if (file.exists()) throw new Exception(s"Cannot create tag '$name' because it already exists.")
 
-    FileUtil.writeToFile(file, actualTargetId.sha.getBytes("US-ASCII"))
+    FileUtil.writeToFile(file, actualTargetId.sha)
 
     Tag(
       id = ObjectId(sha = ""),
-      header = ObjectHeader(typ = ObjectType.Tag, length = 0),
+      header = ObjectHeader(typ = ObjectType.Tag),
       taggerName = None,
       taggerEmail = None,
       tagDate = None,
@@ -101,27 +107,43 @@ object Tag {
     )
   }
 
-  private[git] def encode(tag: Tag) = {
+  /** Returns the tag encoded as a sequence of bytes. */
+  private[git] def encode(tag: Tag): Seq[Byte] = {
     val builder = Vector.newBuilder[Byte]
-
-    builder ++= tag.header
-
-    builder ++= "object ".getBytes ++ tag.targetIdentifier ++ "\n".getBytes("US-ASCII")
-    builder ++= s"type ${tag.tagType}".getBytes("US-ASCII") ++ "\n".getBytes("US-ASCII")
-    builder ++= s"tag ${tag.name}\n".getBytes("US-ASCII")
-    builder ++= s"tagger ${tag.taggerName}\n<${tag.taggerEmail}> ${tag.tagDate}\n\n".getBytes("US-ASCII")
-
-    val messageBytes: Seq[Byte] = tag.message match {
-      case Some(m) => m.getBytes("US-ASCII")
-      case None => Seq[Byte]()
-    }
-
-    builder ++= messageBytes
+    
+    val body = Tag.encodeBody(tag)
+    val header = if (tag.header.length > 0) tag.header else tag.header.copy(length = body.length)
+    
+    builder ++= header
+    builder ++= body
 
     builder.result()
   }
 
-  private[git] def decode(bytes: Seq[Byte], id: Option[ObjectId] = None): Tag = {
+  /** Returns the tag body encoded as a sequence of bytes. */
+  private[git] def encodeBody(tag: Tag): Seq[Byte] = {
+    val builder = Vector.newBuilder[Byte]
+
+    builder ++= "object ".getBytes("US-ASCII") ++ tag.targetIdentifier ++ "\n".getBytes("US-ASCII")
+    builder ++= s"type ${tag.tagType}\n"
+    builder ++= s"tag ${tag.name}\n"
+    builder ++= s"tagger ${tag.taggerName.getOrElse("")}\n<${tag.taggerEmail.getOrElse("")}> ${tag.tagDate.map(Parser.dateToGitFormat).getOrElse("")}\n\n"
+
+    builder ++= tag.message.getOrElse("").getBytes
+
+    builder.result()
+  }
+
+  /** Returns the bytes decoded as a Tag. */
+  private[git] def decode(bytes: Seq[Byte]): Tag = {
+    val header = ObjectHeader.decode(bytes)
+    val data = bytes.takeRight(header.length)
+
+    decodeBody(data, id = None, header = Some(header))
+  }
+
+  /** Returns the bytes decoded as a Tag body. */
+  private[git] def decodeBody(bytes: Seq[Byte], id: Option[ObjectId] = None, header: Option[ObjectHeader] = None): Tag = {
     val reader = new DataReader(bytes)
 
     if (reader.takeString(7) != "object ") throw new CorruptRepositoryException("Corrupted Tag object.")
@@ -149,15 +171,14 @@ object Tag {
 
     val tagger = parseUserFields(reader)
 
+    reader >> 1 // LF.
+
     // Finally the tag message, if it exists.
     val message = Option(reader.getRestAsString)
 
     val tag = Tag(
-      id = id match {
-        case Some(v) => v
-        case None => ObjectId("")
-      },
-      header = ObjectHeader(ObjectType.Tag, length = bytes.length),
+      id = id.getOrElse(ObjectId("")),
+      header = header.getOrElse(ObjectHeader(ObjectType.Tag)),
       targetIdentifier = targetIdentifier,
       tagType = tagType,
       message = message,
@@ -168,10 +189,10 @@ object Tag {
     )
 
     if (id.isDefined) tag
-    else tag.copy(id = ObjectId.fromBytes(ObjectDatabase.hashObject(Tag.encode(tag))))
+    else tag.copy(id = ObjectId.decode(ObjectDatabase.hashObject(Tag.encode(tag))))
   }
 
-  private[git] def fromHashCode(hashCode: ObjectId, repository: Repository, name: String): Tag = {
+  @deprecated private[git] def fromHashCode(hashCode: ObjectId, repository: Repository, name: String): Tag = {
     Tag(
       id = hashCode, // TODO: Wrong!
       header = ObjectHeader(ObjectType.Tag),
